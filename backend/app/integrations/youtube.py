@@ -201,6 +201,16 @@ def get_video_stats(channel, video_id: str) -> dict:
     return {k: int(v) for k, v in stats.items() if str(v).isdigit()}
 
 
+def set_thumbnail(channel, video_id: str, image_bytes: bytes) -> None:
+    """Set a custom thumbnail for a video (requires a verified channel)."""
+    from googleapiclient.http import MediaInMemoryUpload
+
+    creds = credentials_for_channel(channel)
+    yt = build("youtube", "v3", credentials=creds)
+    media = MediaInMemoryUpload(image_bytes, mimetype="image/png")
+    yt.thumbnails().set(videoId=video_id, media_body=media).execute()
+
+
 def post_top_comment(channel, video_id: str, text: str) -> str | None:
     """Post a top-level comment (used for a pinned CTA). Best-effort."""
     creds = credentials_for_channel(channel)

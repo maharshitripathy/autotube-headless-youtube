@@ -1,6 +1,6 @@
 import {useEffect, useMemo, useState} from 'react';
 import {Channel, VideoOut, api} from '../api';
-import {Drawer, EmptyState, PageHeader, SkeletonCards, StatusBadge} from '../components/ui';
+import {Drawer, EmptyState, PageHeader, SkeletonCards, StatusBadge, useToast} from '../components/ui';
 
 interface Detail {
   video: VideoOut;
@@ -40,6 +40,7 @@ function VideoCard({video, onOpen}: {video: VideoOut; onOpen: () => void}) {
 }
 
 export default function Library() {
+  const {push} = useToast();
   const [channels, setChannels] = useState<Channel[]>([]);
   const [channelId, setChannelId] = useState<number | 'all'>('all');
   const [status, setStatus] = useState('all');
@@ -48,6 +49,7 @@ export default function Library() {
   const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState<Detail | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
 
   useEffect(() => {
     api.get<Channel[]>('/channels').then(({data}) => setChannels(data));
@@ -66,6 +68,20 @@ export default function Library() {
     setDetail(null);
     const {data} = await api.get<Detail>(`/videos/${id}/detail`);
     setDetail(data);
+  };
+
+  const regenerateThumb = async () => {
+    if (!detail) return;
+    setRegenerating(true);
+    try {
+      const {data} = await api.post(`/videos/${detail.video.id}/thumbnail`);
+      setDetail({...detail, media: {...detail.media, thumbnail_url: data.thumbnail_url}});
+      push('Thumbnail regenerated.', 'success');
+    } catch {
+      push('Thumbnail generation failed.', 'error');
+    } finally {
+      setRegenerating(false);
+    }
   };
 
   const filtered = useMemo(() => {
@@ -113,6 +129,19 @@ export default function Library() {
         ) : (
           <>
             {detail.media.video_url && <video src={detail.media.video_url} controls className="thumb" style={{maxHeight: 420, width: 'auto', margin: '0 auto', display: 'block'}} />}
+            <div style={{marginTop: 12}}>
+              <div className="spread">
+                <h4 style={{margin: 0}}>Thumbnail</h4>
+                <button className="secondary" onClick={regenerateThumb} disabled={regenerating}>
+                  {regenerating ? 'Generating…' : 'Regenerate'}
+                </button>
+              </div>
+              {detail.media.thumbnail_url ? (
+                <img src={detail.media.thumbnail_url} style={{width: '100%', borderRadius: 10, marginTop: 8}} />
+              ) : (
+                <p className="muted" style={{fontSize: 13}}>No thumbnail yet.</p>
+              )}
+            </div>
             <div className="spread" style={{marginTop: 12}}>
               <StatusBadge status={detail.video.status} />
               <span className="muted" style={{fontSize: 12}}>{channelName(detail.video.channel_id)}</span>

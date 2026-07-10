@@ -70,3 +70,25 @@ def get_video_detail(video_id: int, db: Session = Depends(get_db)):
             for d in dists
         ],
     }
+
+
+@router.post("/{video_id}/thumbnail")
+def regenerate_thumbnail(video_id: int, db: Session = Depends(get_db)):
+    """Regenerate the video's thumbnail (and re-apply it if published)."""
+    from app.agents.thumbnail import ThumbnailAgent
+    from app.integrations import youtube
+    from app.models.channel import Channel
+    from app.services import storage
+
+    video = db.get(Video, video_id)
+    if not video:
+        raise HTTPException(404, "Video not found")
+    channel = db.get(Channel, video.channel_id)
+    key = ThumbnailAgent().generate(db, channel, video)
+
+    if video.youtube_video_id:
+        try:
+            youtube.set_thumbnail(channel, video.youtube_video_id, storage.download_bytes(key))
+        except Exception:
+            pass
+    return {"thumbnail_url": storage.presigned_url(key)}

@@ -48,6 +48,14 @@ class PublishAgent(BaseAgent):
             except Exception as exc:
                 ctx.log(f"pinned comment failed: {exc}")
 
+        # Apply the custom thumbnail (best-effort; needs a verified channel).
+        if ctx.video.thumbnail_key:
+            try:
+                from app.services import storage
+                youtube.set_thumbnail(ctx.channel, video_id, storage.download_bytes(ctx.video.thumbnail_key))
+            except Exception as exc:
+                ctx.log(f"thumbnail set failed: {exc}")
+
         # Mark the calendar entry done if this run came from one.
         if entry_id := ctx.data.get("calendar_entry_id"):
             from app.models.calendar import CalendarEntry
