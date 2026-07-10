@@ -20,6 +20,7 @@ SCOPES = [
     "https://www.googleapis.com/auth/youtube.upload",
     "https://www.googleapis.com/auth/youtube.readonly",
     "https://www.googleapis.com/auth/yt-analytics.readonly",
+    "https://www.googleapis.com/auth/yt-analytics-monetary.readonly",
 ]
 
 
@@ -164,6 +165,31 @@ def fetch_analytics(channel, days: int = 28) -> list[dict]:
                 "subscribersGained,likes,comments",
         dimensions="day",
     ).execute()
+
+    headers = [h["name"] for h in resp.get("columnHeaders", [])]
+    rows = []
+    for row in resp.get("rows", []):
+        rows.append(dict(zip(headers, row)))
+    return rows
+
+
+def fetch_revenue(channel, days: int = 28) -> list[dict]:
+    """Fetch daily monetary metrics. Returns [] if the channel isn't monetized
+    or the monetary scope wasn't granted."""
+    creds = credentials_for_channel(channel)
+    ya = build("youtubeAnalytics", "v2", credentials=creds)
+    end = date.today()
+    start = end - timedelta(days=days)
+    try:
+        resp = ya.reports().query(
+            ids=f"channel=={channel.youtube_channel_id}",
+            startDate=start.isoformat(),
+            endDate=end.isoformat(),
+            metrics="estimatedRevenue,cpm,playbackBasedCpm",
+            dimensions="day",
+        ).execute()
+    except Exception:
+        return []
 
     headers = [h["name"] for h in resp.get("columnHeaders", [])]
     rows = []

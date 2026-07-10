@@ -1,7 +1,7 @@
 """Analytics routes: expose stored snapshots and trigger refresh."""
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
@@ -11,6 +11,7 @@ from app.api.deps import require_admin
 from app.database import get_db
 from app.models.analytics import AnalyticsSnapshot
 from app.models.channel import Channel
+from app.models.cost import CostLedgerEntry
 from app.models.video import Video
 from app.models.enums import VideoStatus
 from app.schemas import AnalyticsSummary
@@ -61,6 +62,46 @@ def refresh_analytics(channel_id: int, db: Session = Depends(get_db)):
     from app.workers.tasks import pull_analytics
     pull_analytics.delay(channel_id)
     return {"status": "queued"}
+
+
+@router.get("/{channel_id}/revenue")
+def revenue_summary(channel_id: int, days: int = 28, db: Session = Depends(get_db)):
+    """Revenue, production spend (from the cost ledger), and net profit."""
+    channel = db.get(Channel, channel_id)
+    if not channel:
+        raise HTTPException(404, "Channel not found")
+
+    since_date = date.today() - timedelta(days=days)
+    since_dt = datetime.now(timezone.utc) - timedelta(days=days)
+
+    revenue = float(db.execute(
+        select(func.coalesce(func.sum(AnalyticsSnapshot.estimated_revenue), 0.0)).where(
+            AnalyticsSnapshot.channel_id == channel_id,
+            AnalyticsSnapshot.day >= since_date,
+        )
+    ).scalar_one())
+    avg_rpm = float(db.execute(
+        select(func.coalesce(func.avg(AnalyticsSnapshot.rpm), 0.0)).where(
+            AnalyticsSnapshot.channel_id == channel_id,
+            AnalyticsSnapshot.day >= since_date,
+            AnalyticsSnapshot.rpm > 0,
+        )
+    ).scalar_one())
+    spend = float(db.execute(
+        select(func.coalesce(func.sum(CostLedgerEntry.amount_usd), 0.0)).where(
+            CostLedgerEntry.channel_id == channel_id,
+            CostLedgerEntry.created_at >= since_dt,
+        )
+    ).scalar_one())
+
+    return {
+        "channel_id": channel_id,
+        "estimated_revenue_usd": round(revenue, 2),
+        "production_spend_usd": round(spend, 2),
+        "net_profit_usd": round(revenue - spend, 2),
+        "avg_rpm_usd": round(avg_rpm, 2),
+        "roi_pct": round(((revenue - spend) / spend * 100) if spend else 0.0, 1),
+    }
 
 
 @router.get("/{channel_id}/daily")

@@ -8,6 +8,14 @@ interface DailyPoint {
   subscribers_gained: number;
 }
 
+interface Revenue {
+  estimated_revenue_usd: number;
+  production_spend_usd: number;
+  net_profit_usd: number;
+  avg_rpm_usd: number;
+  roi_pct: number;
+}
+
 function ViewsChart({data}: {data: DailyPoint[]}) {
   if (data.length === 0) return <p className="stat-label">No daily data yet. Click Refresh to pull analytics.</p>;
   const max = Math.max(1, ...data.map((d) => d.views));
@@ -41,6 +49,7 @@ export default function Insights() {
   const [selected, setSelected] = useState<number | null>(null);
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [daily, setDaily] = useState<DailyPoint[]>([]);
+  const [revenue, setRevenue] = useState<Revenue | null>(null);
 
   useEffect(() => {
     api.get<Channel[]>('/channels').then(({data}) => {
@@ -53,6 +62,7 @@ export default function Insights() {
     if (selected == null) return;
     api.get<AnalyticsSummary>(`/analytics/${selected}/summary`).then(({data}) => setSummary(data));
     api.get<DailyPoint[]>(`/analytics/${selected}/daily`).then(({data}) => setDaily(data)).catch(() => setDaily([]));
+    api.get<Revenue>(`/analytics/${selected}/revenue`).then(({data}) => setRevenue(data)).catch(() => setRevenue(null));
   }, [selected]);
 
   const refresh = async () => {
@@ -91,6 +101,19 @@ export default function Insights() {
         <h3>Daily views (28d)</h3>
         <ViewsChart data={daily} />
       </div>
+
+      {revenue && (
+        <>
+          <h3>Revenue &amp; ROI (28d)</h3>
+          <div className="grid">
+            <div className="card"><div className="stat">${revenue.estimated_revenue_usd.toLocaleString()}</div><div className="stat-label">Est. ad revenue</div></div>
+            <div className="card"><div className="stat">${revenue.production_spend_usd.toLocaleString()}</div><div className="stat-label">Production spend</div></div>
+            <div className="card"><div className="stat" style={{color: revenue.net_profit_usd >= 0 ? '#4dff9b' : '#ff5c5c'}}>${revenue.net_profit_usd.toLocaleString()}</div><div className="stat-label">Net profit</div></div>
+            <div className="card"><div className="stat">${revenue.avg_rpm_usd}</div><div className="stat-label">Avg RPM</div></div>
+            <div className="card"><div className="stat">{revenue.roi_pct}%</div><div className="stat-label">ROI</div></div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

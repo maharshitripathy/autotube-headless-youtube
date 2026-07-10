@@ -28,3 +28,8 @@ class AnalyticsSnapshot(Base, TimestampMixin):
     comments: Mapped[int] = mapped_column(Integer, default=0)
     impressions: Mapped[int] = mapped_column(Integer, default=0)
     ctr: Mapped[float] = mapped_column(Float, default=0.0)
+
+    # Monetization (requires yt-analytics-monetary scope + a monetized channel)
+    estimated_revenue: Mapped[float] = mapped_column(Float, default=0.0)
+    cpm: Mapped[float] = mapped_column(Float, default=0.0)
+    rpm: Mapped[float] = mapped_column(Float, default=0.0)

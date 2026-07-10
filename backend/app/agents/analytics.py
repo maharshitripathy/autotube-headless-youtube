@@ -19,6 +19,9 @@ class AnalyticsAgent(BaseAgent):
 
     def refresh(self, db, channel: Channel, days: int = 28) -> int:
         rows = youtube.fetch_analytics(channel, days=days)
+        revenue_by_day = {
+            r["day"]: r for r in youtube.fetch_revenue(channel, days=days)
+        }
         count = 0
         for row in rows:
             day = date.fromisoformat(row["day"])
@@ -38,6 +41,12 @@ class AnalyticsAgent(BaseAgent):
             snap.subscribers_gained = int(row.get("subscribersGained", 0))
             snap.likes = int(row.get("likes", 0))
             snap.comments = int(row.get("comments", 0))
+
+            rev = revenue_by_day.get(row["day"], {})
+            snap.estimated_revenue = float(rev.get("estimatedRevenue", 0.0))
+            snap.cpm = float(rev.get("cpm", 0.0))
+            snap.rpm = float(rev.get("playbackBasedCpm", 0.0))
+
             if existing is None:
                 db.add(snap)
             count += 1
