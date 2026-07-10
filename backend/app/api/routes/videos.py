@@ -27,3 +27,18 @@ def get_video(video_id: int, db: Session = Depends(get_db)):
     if not video:
         raise HTTPException(404, "Video not found")
     return video
+
+
+@router.get("/{video_id}/media")
+def get_video_media(video_id: int, db: Session = Depends(get_db)):
+    """Presigned URLs for previewing the rendered Short and its assets."""
+    from app.services import storage
+
+    video = db.get(Video, video_id)
+    if not video:
+        raise HTTPException(404, "Video not found")
+    return {
+        "video_url": storage.presigned_url(video.video_key) if video.video_key else None,
+        "audio_url": storage.presigned_url(video.audio_key) if video.audio_key else None,
+        "thumbnail_url": storage.presigned_url(video.thumbnail_key) if video.thumbnail_key else None,
+    }

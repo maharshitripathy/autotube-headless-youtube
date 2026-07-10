@@ -59,6 +59,13 @@ def run_job(job_id: int) -> dict:
             db.commit()
             return {"status": "failed", "reason": str(exc)}
 
+        # Persist scalar hand-off data so a later resume keeps calendar context.
+        job.state = {
+            **(job.state or {}),
+            "calendar_entry_id": ctx.data.get("calendar_entry_id"),
+        }
+        db.commit()
+
         # Approval gate.
         if ctx.channel.require_approval:
             job.status = JobStatus.awaiting_approval
