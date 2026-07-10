@@ -30,4 +30,8 @@ celery_app.conf.beat_schedule = {
         "task": "app.workers.tasks.daily_maintenance",
         "schedule": crontab(hour=3, minute=0),  # 03:00 UTC: refresh analytics + replan
     },
+    "rotate-experiments": {
+        "task": "app.workers.tasks.rotate_experiments",
+        "schedule": crontab(minute=0, hour="*/6"),  # every 6h: A/B title rotation
+    },
 }

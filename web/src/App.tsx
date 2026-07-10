@@ -6,6 +6,7 @@ import Insights from './pages/Insights';
 import Calendar from './pages/Calendar';
 import Approvals from './pages/Approvals';
 import Monetize from './pages/Monetize';
+import Experiments from './pages/Experiments';
 
 function Login({onLogin}: {onLogin: () => void}) {
   const [username, setUsername] = useState('admin');
@@ -63,6 +64,7 @@ function Shell({onLogout}: {onLogout: () => void}) {
           <NavLink to="/insights">Insights</NavLink>
           <NavLink to="/calendar">Calendar</NavLink>
           <NavLink to="/monetize">Monetization</NavLink>
+          <NavLink to="/experiments">Experiments</NavLink>
           <NavLink to="/approvals">Approvals</NavLink>
         </nav>
         {status && (
@@ -84,6 +86,7 @@ function Shell({onLogout}: {onLogout: () => void}) {
           <Route path="/insights" element={<Insights />} />
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/monetize" element={<Monetize />} />
+          <Route path="/experiments" element={<Experiments />} />
           <Route path="/approvals" element={<Approvals />} />
         </Routes>
       </main>

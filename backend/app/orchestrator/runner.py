@@ -126,6 +126,82 @@ def refresh_channel_analytics(channel_id: int) -> dict:
         db.close()
 
 
+def rotate_title_experiments(rotate_hours: int = 24) -> dict:
+    """Advance A/B title experiments: record each variant's view delta, rotate
+    to the next variant on the live video, then settle on the best performer."""
+    from datetime import datetime, timezone
+
+    from app.integrations import youtube
+    from app.models.experiment import TitleExperiment
+    from app.models.video import Video
+
+    db = SessionLocal()
+    actions: list[dict] = []
+    try:
+        experiments = db.query(TitleExperiment).filter(TitleExperiment.settled.is_(False)).all()
+        now = datetime.now(timezone.utc)
+        for exp in experiments:
+            video = db.get(Video, exp.video_id)
+            if not video or not video.youtube_video_id:
+                continue
+            channel = db.get(Channel, exp.channel_id)
+
+            # Start the clock on first observation.
+            if exp.last_rotated_at is None:
+                stats = youtube.get_video_stats(channel, video.youtube_video_id)
+                exp.last_view_count = stats.get("viewCount", 0)
+                exp.last_rotated_at = now
+                db.commit()
+                continue
+
+            elapsed_h = (now - exp.last_rotated_at).total_seconds() / 3600.0
+            if elapsed_h < rotate_hours:
+                continue
+
+            stats = youtube.get_video_stats(channel, video.youtube_video_id)
+            total = stats.get("viewCount", 0)
+            delta = max(0, total - exp.last_view_count)
+
+            results = list(exp.results or [])
+            results.append({
+                "index": exp.current_index,
+                "title": exp.variants[exp.current_index],
+                "views": delta,
+                "tested_at": now.isoformat(),
+            })
+            exp.results = results
+
+            next_index = exp.current_index + 1
+            if next_index < len(exp.variants):
+                exp.current_index = next_index
+                exp.last_view_count = total
+                exp.last_rotated_at = now
+                try:
+                    youtube.update_video_metadata(
+                        channel, video.youtube_video_id, title=exp.variants[next_index]
+                    )
+                    video.title = exp.variants[next_index]
+                except Exception:
+                    pass
+                actions.append({"video_id": video.id, "rotated_to": next_index})
+            else:
+                winner = max(results, key=lambda r: r["views"])
+                exp.winner_index = winner["index"]
+                exp.settled = True
+                try:
+                    youtube.update_video_metadata(
+                        channel, video.youtube_video_id, title=exp.variants[winner["index"]]
+                    )
+                    video.title = exp.variants[winner["index"]]
+                except Exception:
+                    pass
+                actions.append({"video_id": video.id, "winner": winner["index"]})
+            db.commit()
+        return {"actions": actions}
+    finally:
+        db.close()
+
+
 def run_daily_maintenance() -> dict:
     """Refresh analytics and replan the calendar for every active channel."""
     db = SessionLocal()

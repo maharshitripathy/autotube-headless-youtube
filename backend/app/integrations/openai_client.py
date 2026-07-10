@@ -64,6 +64,23 @@ def generate_image(prompt: str, size: str = "1024x1792") -> bytes:
     return base64.b64decode(resp.data[0].b64_json)
 
 
+def generate_title_variants(topic: str, script: str, n: int = 3) -> list[str]:
+    """Generate N distinct, high-CTR title variants for A/B testing."""
+    system = "You are a YouTube title strategist. Return strict JSON."
+    user = (
+        f"Topic: {topic}\nScript: {script}\n"
+        f'Generate {n} DISTINCT high-CTR titles (<=70 chars each) with different '
+        'angles (curiosity, list, bold claim). Return JSON: {"titles": [str]}'
+    )
+    resp = _client().chat.completions.create(
+        model="gpt-4o",
+        response_format={"type": "json_object"},
+        messages=[{"role": "system", "content": system},
+                  {"role": "user", "content": user}],
+    )
+    return json.loads(resp.choices[0].message.content).get("titles", [])
+
+
 def moderate(text: str) -> dict:
     """Run OpenAI moderation. Returns {flagged: bool, categories: [str]}."""
     try:

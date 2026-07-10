@@ -174,6 +174,33 @@ def fetch_analytics(channel, days: int = 28) -> list[dict]:
     return rows
 
 
+def update_video_metadata(channel, video_id: str, title: str | None = None,
+                          description: str | None = None) -> None:
+    """Update a live video's title/description (used for A/B title rotation)."""
+    creds = credentials_for_channel(channel)
+    yt = build("youtube", "v3", credentials=creds)
+    current = yt.videos().list(part="snippet", id=video_id).execute()
+    items = current.get("items", [])
+    if not items:
+        return
+    snippet = items[0]["snippet"]
+    if title is not None:
+        snippet["title"] = title
+    if description is not None:
+        snippet["description"] = description
+    yt.videos().update(part="snippet", body={"id": video_id, "snippet": snippet}).execute()
+
+
+def get_video_stats(channel, video_id: str) -> dict:
+    """Return cumulative statistics for a video (viewCount, likeCount, ...)."""
+    creds = credentials_for_channel(channel)
+    yt = build("youtube", "v3", credentials=creds)
+    resp = yt.videos().list(part="statistics", id=video_id).execute()
+    items = resp.get("items", [])
+    stats = items[0].get("statistics", {}) if items else {}
+    return {k: int(v) for k, v in stats.items() if str(v).isdigit()}
+
+
 def post_top_comment(channel, video_id: str, text: str) -> str | None:
     """Post a top-level comment (used for a pinned CTA). Best-effort."""
     creds = credentials_for_channel(channel)

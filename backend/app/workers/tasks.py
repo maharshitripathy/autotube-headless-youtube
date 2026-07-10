@@ -41,3 +41,10 @@ def daily_maintenance() -> dict:
     """Daily: refresh analytics and replan the calendar for all active channels."""
     from app.orchestrator.runner import run_daily_maintenance
     return run_daily_maintenance()
+
+
+@celery_app.task(name="app.workers.tasks.rotate_experiments")
+def rotate_experiments() -> dict:
+    """Advance A/B title experiments and settle winners."""
+    from app.orchestrator.runner import rotate_title_experiments
+    return rotate_title_experiments()

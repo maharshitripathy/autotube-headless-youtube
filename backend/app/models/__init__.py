@@ -7,6 +7,7 @@ from app.models.analytics import AnalyticsSnapshot
 from app.models.cost import CostLedgerEntry
 from app.models.monetization import Monetization
 from app.models.distribution import Distribution
+from app.models.experiment import TitleExperiment
 
 __all__ = [
     "Channel",
@@ -17,4 +18,5 @@ __all__ = [
     "CostLedgerEntry",
     "Monetization",
     "Distribution",
+    "TitleExperiment",
 ]

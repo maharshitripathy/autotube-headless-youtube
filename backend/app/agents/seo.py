@@ -21,4 +21,32 @@ class SeoAgent(BaseAgent):
         ctx.db.commit()
         cost_guard.record_spend(ctx.db, "openai", "seo", openai_client.EST_SCRIPT_USD,
                                 channel_id=ctx.channel.id, video_id=ctx.video.id)
+
+        # Set up an A/B title experiment (variants rotate on the live video).
+        try:
+            variants = openai_client.generate_title_variants(
+                ctx.video.topic or "", ctx.video.script or "", n=3
+            )
+            if ctx.video.title and ctx.video.title not in variants:
+                variants = [ctx.video.title, *variants][:3]
+            if len(variants) > 1:
+                from app.models.experiment import TitleExperiment
+                exp = (
+                    ctx.db.query(TitleExperiment)
+                    .filter(TitleExperiment.video_id == ctx.video.id)
+                    .one_or_none()
+                )
+                if exp is None:
+                    exp = TitleExperiment(video_id=ctx.video.id, channel_id=ctx.channel.id)
+                    ctx.db.add(exp)
+                exp.variants = variants
+                exp.current_index = 0
+                exp.results = []
+                exp.settled = False
+                ctx.video.title = variants[0]
+                ctx.db.commit()
+                ctx.log(f"created A/B experiment with {len(variants)} title variants")
+        except Exception as exc:
+            ctx.log(f"title experiment setup skipped: {exc}")
+
         ctx.log(f"seo title: {ctx.video.title}")
