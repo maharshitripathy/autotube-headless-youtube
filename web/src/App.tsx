@@ -2,6 +2,7 @@ import {useEffect, useState} from 'react';
 import {NavLink, Navigate, Route, Routes, useLocation} from 'react-router-dom';
 import {api, clearCredentials, hasCredentials, setCredentials} from './api';
 import {useToast} from './components/ui';
+import Dashboard from './pages/Dashboard';
 import Channels from './pages/Channels';
 import Insights from './pages/Insights';
 import Calendar from './pages/Calendar';
@@ -10,6 +11,7 @@ import Monetize from './pages/Monetize';
 import Experiments from './pages/Experiments';
 
 const NAV = [
+  {to: '/dashboard', label: 'Dashboard', icon: '📊'},
   {to: '/channels', label: 'Channels', icon: '📺'},
   {to: '/insights', label: 'Insights', icon: '📈'},
   {to: '/calendar', label: 'Calendar', icon: '🗓️'},
@@ -118,7 +120,8 @@ function Shell({onLogout}: {onLogout: () => void}) {
         </div>
         <main className="page">
           <Routes>
-            <Route path="/" element={<Navigate to="/channels" />} />
+            <Route path="/" element={<Navigate to="/dashboard" />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/channels" element={<Channels />} />
             <Route path="/insights" element={<Insights />} />
             <Route path="/calendar" element={<Calendar />} />
