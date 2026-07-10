@@ -29,11 +29,17 @@ infra/     compose + local service config
 ```
 
 ## Phases
-- **P0** Foundation (this scaffold)
-- **P1** YouTube OAuth onboarding + channel selector
-- **P2** Content pipeline (agents 1–6)
-- **P3** Publish + approval gate
-- **P4** Analytics + strategy calendar
-- **P5** Full autonomy
+- **P0** Foundation (this scaffold) — ✅
+- **P1** YouTube OAuth onboarding + channel selector — ✅
+- **P2** Content pipeline (agents 1–6) — ✅
+- **P3** Publish + approval gate — ✅
+- **P4** Analytics + strategy calendar — ✅
+- **P5** Full autonomy — ✅
+
+## Multi-agent pipeline
+1. Research → 2. Script → 3. Voiceover → 4. Visuals → 5. Captions → 6. Render →
+7. SEO → 8. Publish → (9. Analytics, 10. Strategy run on a schedule).
+The orchestrator (`app/orchestrator/runner.py`) drives these with a per-channel
+approval gate and a Celery-beat scheduler for hands-off autonomy.
 
 > Note: YouTube's API cannot create new channels (ToS). The onboarding wizard connects existing channels via OAuth.
