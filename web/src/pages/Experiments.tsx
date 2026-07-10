@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react';
 import {Channel, api} from '../api';
+import {EmptyState, PageHeader, useToast} from '../components/ui';
 
 interface Result {
   index: number;
@@ -19,6 +20,7 @@ interface Experiment {
 }
 
 export default function Experiments() {
+  const {push} = useToast();
   const [channels, setChannels] = useState<Channel[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
   const [experiments, setExperiments] = useState<Experiment[]>([]);
@@ -39,6 +41,7 @@ export default function Experiments() {
 
   const promote = async (exp: Experiment, index: number) => {
     await api.post(`/experiments/${exp.id}/promote/${index}`);
+    push(`Promoted variant ${index + 1} as the winner.`, 'success');
     if (selected != null) load(selected);
   };
 
@@ -47,16 +50,19 @@ export default function Experiments() {
 
   return (
     <div>
-      <div className="row" style={{justifyContent: 'space-between'}}>
-        <h2>A/B Title Experiments</h2>
-        <select value={selected ?? ''} onChange={(e) => setSelected(Number(e.target.value))} style={{width: 240}}>
-          {channels.map((c) => (
-            <option key={c.id} value={c.id}>{c.title}</option>
-          ))}
-        </select>
-      </div>
+      <PageHeader
+        title="A/B Title Experiments"
+        subtitle="Automatic title rotation with a data-driven winner"
+        actions={
+          <select value={selected ?? ''} onChange={(e) => setSelected(Number(e.target.value))} style={{width: 220}}>
+            {channels.map((c) => (
+              <option key={c.id} value={c.id}>{c.title}</option>
+            ))}
+          </select>
+        }
+      />
 
-      {experiments.length === 0 && <p className="stat-label">No experiments yet. They are created automatically when videos are produced.</p>}
+      {experiments.length === 0 && <EmptyState icon="🧪" title="No experiments yet" hint="Experiments are created automatically when videos are produced." />}
 
       {experiments.map((exp) => (
         <div className="card" key={exp.id}>

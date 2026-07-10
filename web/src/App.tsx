@@ -1,6 +1,7 @@
 import {useEffect, useState} from 'react';
-import {NavLink, Navigate, Route, Routes} from 'react-router-dom';
+import {NavLink, Navigate, Route, Routes, useLocation} from 'react-router-dom';
 import {api, clearCredentials, hasCredentials, setCredentials} from './api';
+import {useToast} from './components/ui';
 import Channels from './pages/Channels';
 import Insights from './pages/Insights';
 import Calendar from './pages/Calendar';
@@ -8,12 +9,23 @@ import Approvals from './pages/Approvals';
 import Monetize from './pages/Monetize';
 import Experiments from './pages/Experiments';
 
+const NAV = [
+  {to: '/channels', label: 'Channels', icon: '📺'},
+  {to: '/insights', label: 'Insights', icon: '📈'},
+  {to: '/calendar', label: 'Calendar', icon: '🗓️'},
+  {to: '/monetize', label: 'Monetization', icon: '💰'},
+  {to: '/experiments', label: 'Experiments', icon: '🧪'},
+  {to: '/approvals', label: 'Approvals', icon: '✅'},
+];
+
 function Login({onLogin}: {onLogin: () => void}) {
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
 
   const submit = async () => {
+    setBusy(true);
     setCredentials(username, password);
     try {
       await api.get('/channels');
@@ -21,13 +33,19 @@ function Login({onLogin}: {onLogin: () => void}) {
     } catch {
       clearCredentials();
       setError('Invalid credentials');
+    } finally {
+      setBusy(false);
     }
   };
 
   return (
     <div className="login-wrap">
       <div className="card login-card">
-        <h1>AutoTube</h1>
+        <div className="brand" style={{marginBottom: 18}}>
+          <div className="brand-logo">A</div>
+          <h1>AutoTube</h1>
+        </div>
+        <p className="muted" style={{marginTop: 0}}>Sign in to your channel empire</p>
         <label>Username</label>
         <input value={username} onChange={(e) => setUsername(e.target.value)} />
         <label>Password</label>
@@ -37,9 +55,9 @@ function Login({onLogin}: {onLogin: () => void}) {
           onChange={(e) => setPassword(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && submit()}
         />
-        {error && <p style={{color: 'var(--accent)'}}>{error}</p>}
+        {error && <p style={{color: 'var(--bad)'}}>{error}</p>}
         <div style={{marginTop: 16}}>
-          <button onClick={submit}>Sign in</button>
+          <button onClick={submit} disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
         </div>
       </div>
     </div>
@@ -48,6 +66,9 @@ function Login({onLogin}: {onLogin: () => void}) {
 
 function Shell({onLogout}: {onLogout: () => void}) {
   const [status, setStatus] = useState<any>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
+
   useEffect(() => {
     const load = () => api.get('/system/status').then(({data}) => setStatus(data)).catch(() => undefined);
     load();
@@ -55,48 +76,68 @@ function Shell({onLogout}: {onLogout: () => void}) {
     return () => clearInterval(t);
   }, []);
 
+  useEffect(() => setMobileOpen(false), [location.pathname]);
+
+  const current = NAV.find((n) => location.pathname.startsWith(n.to));
+
   return (
     <div className="layout">
-      <aside className="sidebar">
-        <h1>AutoTube</h1>
+      <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
+        <div className="brand">
+          <div className="brand-logo">A</div>
+          <h1>AutoTube</h1>
+        </div>
         <nav>
-          <NavLink to="/channels">Channels</NavLink>
-          <NavLink to="/insights">Insights</NavLink>
-          <NavLink to="/calendar">Calendar</NavLink>
-          <NavLink to="/monetize">Monetization</NavLink>
-          <NavLink to="/experiments">Experiments</NavLink>
-          <NavLink to="/approvals">Approvals</NavLink>
+          {NAV.map((n) => (
+            <NavLink key={n.to} to={n.to}>
+              <span className="nav-ico">{n.icon}</span>
+              {n.label}
+            </NavLink>
+          ))}
         </nav>
+        <div className="sidebar-spacer" />
         {status && (
-          <div className="card" style={{marginTop: 20, fontSize: 12}}>
-            <div className="stat-label">Autonomous: {status.channels_autonomous}/{status.channels_active}</div>
-            <div className="stat-label">Awaiting approval: {status.jobs_awaiting_approval}</div>
-            <div className="stat-label">Running: {status.jobs_running}</div>
-            <div className="stat-label">Spend 24h: ${status.spend_last_24h_usd}</div>
+          <div className="mini-status">
+            <div className="ms-row"><span className="muted">Autonomous</span><b>{status.channels_autonomous}/{status.channels_active}</b></div>
+            <div className="ms-row"><span className="muted">Awaiting approval</span><b>{status.jobs_awaiting_approval}</b></div>
+            <div className="ms-row"><span className="muted">Running</span><b>{status.jobs_running}</b></div>
+            <div className="ms-row"><span className="muted">Spend 24h</span><b>${status.spend_last_24h_usd}</b></div>
           </div>
         )}
-        <div style={{marginTop: 24}}>
-          <button className="secondary" onClick={onLogout}>Sign out</button>
+        <div style={{marginTop: 14}}>
+          <button className="secondary" style={{width: '100%'}} onClick={onLogout}>Sign out</button>
         </div>
       </aside>
-      <main className="content">
-        <Routes>
-          <Route path="/" element={<Navigate to="/channels" />} />
-          <Route path="/channels" element={<Channels />} />
-          <Route path="/insights" element={<Insights />} />
-          <Route path="/calendar" element={<Calendar />} />
-          <Route path="/monetize" element={<Monetize />} />
-          <Route path="/experiments" element={<Experiments />} />
-          <Route path="/approvals" element={<Approvals />} />
-        </Routes>
-      </main>
+
+      <div className="content">
+        <div className="topbar">
+          <span className="crumbs">{current?.icon} {current?.label ?? 'AutoTube'}</span>
+          {status && status.jobs_awaiting_approval > 0 && (
+            <NavLink to="/approvals" className="badge warn">{status.jobs_awaiting_approval} awaiting approval</NavLink>
+          )}
+        </div>
+        <main className="page">
+          <Routes>
+            <Route path="/" element={<Navigate to="/channels" />} />
+            <Route path="/channels" element={<Channels />} />
+            <Route path="/insights" element={<Insights />} />
+            <Route path="/calendar" element={<Calendar />} />
+            <Route path="/monetize" element={<Monetize />} />
+            <Route path="/experiments" element={<Experiments />} />
+            <Route path="/approvals" element={<Approvals />} />
+          </Routes>
+        </main>
+      </div>
     </div>
   );
 }
 
 export default function App() {
+  const {push} = useToast();
   const [authed, setAuthed] = useState(hasCredentials());
-  if (!authed) return <Login onLogin={() => setAuthed(true)} />;
+  if (!authed) {
+    return <Login onLogin={() => { setAuthed(true); push('Welcome back!', 'success'); }} />;
+  }
   return (
     <Shell
       onLogout={() => {

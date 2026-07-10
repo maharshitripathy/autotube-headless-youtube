@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react';
 import {AnalyticsSummary, Channel, api} from '../api';
+import {EmptyState, PageHeader, Stat, useToast} from '../components/ui';
 
 interface DailyPoint {
   day: string;
@@ -45,6 +46,7 @@ function ViewsChart({data}: {data: DailyPoint[]}) {
 }
 
 export default function Insights() {
+  const {push} = useToast();
   const [channels, setChannels] = useState<Channel[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
@@ -68,33 +70,36 @@ export default function Insights() {
   const refresh = async () => {
     if (selected == null) return;
     await api.post(`/analytics/${selected}/refresh`);
-    alert('Analytics refresh queued.');
+    push('Analytics refresh queued.', 'success');
   };
 
   return (
     <div>
-      <div className="row" style={{justifyContent: 'space-between'}}>
-        <h2>Insights</h2>
-        <div className="row">
-          <select value={selected ?? ''} onChange={(e) => setSelected(Number(e.target.value))} style={{width: 240}}>
-            {channels.map((c) => (
-              <option key={c.id} value={c.id}>{c.title}</option>
-            ))}
-          </select>
-          <button className="secondary" onClick={refresh}>Refresh</button>
-        </div>
-      </div>
+      <PageHeader
+        title="Insights"
+        subtitle="Performance and revenue per channel"
+        actions={
+          <>
+            <select value={selected ?? ''} onChange={(e) => setSelected(Number(e.target.value))} style={{width: 220}}>
+              {channels.map((c) => (
+                <option key={c.id} value={c.id}>{c.title}</option>
+              ))}
+            </select>
+            <button className="secondary" onClick={refresh}>Refresh</button>
+          </>
+        }
+      />
 
       {summary ? (
         <div className="grid">
-          <div className="card"><div className="stat">{summary.total_views.toLocaleString()}</div><div className="stat-label">Views (28d)</div></div>
-          <div className="card"><div className="stat">{Math.round(summary.total_watch_time_minutes).toLocaleString()}</div><div className="stat-label">Watch time (min)</div></div>
-          <div className="card"><div className="stat">{summary.subscribers_gained.toLocaleString()}</div><div className="stat-label">Subscribers gained</div></div>
-          <div className="card"><div className="stat">{(summary.avg_ctr * 100).toFixed(1)}%</div><div className="stat-label">Avg CTR</div></div>
-          <div className="card"><div className="stat">{summary.videos_published}</div><div className="stat-label">Videos published</div></div>
+          <Stat label="Views (28d)" value={summary.total_views.toLocaleString()} />
+          <Stat label="Watch time (min)" value={Math.round(summary.total_watch_time_minutes).toLocaleString()} />
+          <Stat label="Subscribers gained" value={summary.subscribers_gained.toLocaleString()} />
+          <Stat label="Avg CTR" value={`${(summary.avg_ctr * 100).toFixed(1)}%`} />
+          <Stat label="Videos published" value={summary.videos_published} />
         </div>
       ) : (
-        <p>Select a channel to view analytics.</p>
+        <EmptyState icon="📈" title="No analytics yet" hint="Select a channel and hit Refresh to pull the latest metrics." />
       )}
 
       <div className="card">
@@ -104,13 +109,13 @@ export default function Insights() {
 
       {revenue && (
         <>
-          <h3>Revenue &amp; ROI (28d)</h3>
+          <h3 style={{margin: '18px 0 10px'}}>Revenue &amp; ROI (28d)</h3>
           <div className="grid">
-            <div className="card"><div className="stat">${revenue.estimated_revenue_usd.toLocaleString()}</div><div className="stat-label">Est. ad revenue</div></div>
-            <div className="card"><div className="stat">${revenue.production_spend_usd.toLocaleString()}</div><div className="stat-label">Production spend</div></div>
-            <div className="card"><div className="stat" style={{color: revenue.net_profit_usd >= 0 ? '#4dff9b' : '#ff5c5c'}}>${revenue.net_profit_usd.toLocaleString()}</div><div className="stat-label">Net profit</div></div>
-            <div className="card"><div className="stat">${revenue.avg_rpm_usd}</div><div className="stat-label">Avg RPM</div></div>
-            <div className="card"><div className="stat">{revenue.roi_pct}%</div><div className="stat-label">ROI</div></div>
+            <Stat label="Est. ad revenue" value={`$${revenue.estimated_revenue_usd.toLocaleString()}`} />
+            <Stat label="Production spend" value={`$${revenue.production_spend_usd.toLocaleString()}`} />
+            <Stat label="Net profit" value={`$${revenue.net_profit_usd.toLocaleString()}`} tone={revenue.net_profit_usd >= 0 ? 'good' : 'bad'} />
+            <Stat label="Avg RPM" value={`$${revenue.avg_rpm_usd}`} />
+            <Stat label="ROI" value={`${revenue.roi_pct}%`} tone={revenue.roi_pct >= 0 ? 'good' : 'bad'} />
           </div>
         </>
       )}

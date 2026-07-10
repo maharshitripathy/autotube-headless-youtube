@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react';
 import {Channel, api} from '../api';
+import {PageHeader, useToast} from '../components/ui';
 
 interface AffiliateLink {
   keyword: string;
@@ -20,6 +21,7 @@ interface Monetization {
 }
 
 export default function Monetize() {
+  const {push} = useToast();
   const [channels, setChannels] = useState<Channel[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
   const [m, setM] = useState<Monetization | null>(null);
@@ -41,7 +43,7 @@ export default function Monetize() {
   const save = async () => {
     if (selected == null || !m) return;
     await api.put(`/channels/${selected}/monetization`, m);
-    alert('Monetization saved.');
+    push('Monetization saved.', 'success');
   };
 
   const addLink = () => {
@@ -61,14 +63,17 @@ export default function Monetize() {
 
   return (
     <div>
-      <div className="row" style={{justifyContent: 'space-between'}}>
-        <h2>Monetization</h2>
-        <select value={selected ?? ''} onChange={(e) => setSelected(Number(e.target.value))} style={{width: 240}}>
-          {channels.map((c) => (
-            <option key={c.id} value={c.id}>{c.title}</option>
-          ))}
-        </select>
-      </div>
+      <PageHeader
+        title="Monetization"
+        subtitle="Affiliate links, sponsor reads, and CTAs per channel"
+        actions={
+          <select value={selected ?? ''} onChange={(e) => setSelected(Number(e.target.value))} style={{width: 220}}>
+            {channels.map((c) => (
+              <option key={c.id} value={c.id}>{c.title}</option>
+            ))}
+          </select>
+        }
+      />
 
       {m && (
         <>

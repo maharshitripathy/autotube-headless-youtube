@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react';
 import {Job, api} from '../api';
+import {EmptyState, PageHeader, StatusBadge, useToast} from '../components/ui';
 
 function Preview({videoId}: {videoId: number}) {
   const [url, setUrl] = useState<string | null>(null);
@@ -11,6 +12,7 @@ function Preview({videoId}: {videoId: number}) {
 }
 
 export default function Approvals() {
+  const {push} = useToast();
   const [jobs, setJobs] = useState<Job[]>([]);
 
   const load = () => api.get<Job[]>('/jobs').then(({data}) => setJobs(data));
@@ -23,10 +25,12 @@ export default function Approvals() {
 
   const approve = async (id: number) => {
     await api.post(`/jobs/${id}/approve`);
+    push('Approved — publishing now.', 'success');
     load();
   };
   const reject = async (id: number) => {
     await api.post(`/jobs/${id}/reject`);
+    push('Job rejected.', 'info');
     load();
   };
 
@@ -38,7 +42,7 @@ export default function Approvals() {
 
   return (
     <div>
-      <h2>Jobs & Approvals</h2>
+      <PageHeader title="Jobs & Approvals" subtitle="Review, approve, and monitor pipeline runs" />
       <div className="card">
         <table>
           <thead>
@@ -51,7 +55,7 @@ export default function Approvals() {
                 <td>{j.channel_id}</td>
                 <td>{j.video_id ? <Preview videoId={j.video_id} /> : '—'}</td>
                 <td>{j.current_step ?? '—'}</td>
-                <td><span className={`badge ${statusBadge(j.status)}`}>{j.status}</span>{j.error && <div className="stat-label">{j.error}</div>}</td>
+                <td><StatusBadge status={j.status} />{j.error && <div className="stat-label">{j.error}</div>}</td>
                 <td>
                   {j.status === 'awaiting_approval' && (
                     <div className="row">

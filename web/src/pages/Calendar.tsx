@@ -1,7 +1,9 @@
 import {useEffect, useState} from 'react';
 import {CalendarEntry, Channel, api} from '../api';
+import {PageHeader, useToast} from '../components/ui';
 
 export default function Calendar() {
+  const {push} = useToast();
   const [channels, setChannels] = useState<Channel[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
   const [entries, setEntries] = useState<CalendarEntry[]>([]);
@@ -31,6 +33,7 @@ export default function Calendar() {
       scheduled_for: new Date(when).toISOString(),
       notes: notes || null,
     });
+    push('Upload added to the plan.', 'success');
     setTopic('');
     setNotes('');
     setWhen('');
@@ -39,28 +42,33 @@ export default function Calendar() {
 
   const remove = async (id: number) => {
     await api.delete(`/calendar/${id}`);
+    push('Removed from plan.', 'info');
     if (selected != null) load(selected);
   };
 
   const autoPlan = async () => {
     if (selected == null) return;
     await api.post('/calendar/plan', null, {params: {channel_id: selected}});
+    push('Calendar auto-planned.', 'success');
     load(selected);
   };
 
   return (
     <div>
-      <div className="row" style={{justifyContent: 'space-between'}}>
-        <h2>Content Calendar</h2>
-        <div className="row">
-          <button className="secondary" onClick={autoPlan}>Auto-plan next week</button>
-          <select value={selected ?? ''} onChange={(e) => setSelected(Number(e.target.value))} style={{width: 240}}>
-            {channels.map((c) => (
-              <option key={c.id} value={c.id}>{c.title}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <PageHeader
+        title="Content Calendar"
+        subtitle="Plan and override upcoming uploads"
+        actions={
+          <>
+            <button className="secondary" onClick={autoPlan}>Auto-plan next week</button>
+            <select value={selected ?? ''} onChange={(e) => setSelected(Number(e.target.value))} style={{width: 220}}>
+              {channels.map((c) => (
+                <option key={c.id} value={c.id}>{c.title}</option>
+              ))}
+            </select>
+          </>
+        }
+      />
 
       <div className="card">
         <h3>Add / override an upload</h3>

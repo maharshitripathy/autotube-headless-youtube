@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react';
 import {api, Channel} from '../api';
+import {EmptyState, PageHeader, SkeletonCards, useToast} from '../components/ui';
 
 interface Voice {
   voice_id: string;
@@ -7,6 +8,7 @@ interface Voice {
 }
 
 function ChannelSettings({channel, voices, onSaved}: {channel: Channel; voices: Voice[]; onSaved: () => void}) {
+  const {push} = useToast();
   const [niche, setNiche] = useState(channel.niche ?? '');
   const [uploads, setUploads] = useState(channel.uploads_per_day);
   const [voiceId, setVoiceId] = useState('');
@@ -29,6 +31,7 @@ function ChannelSettings({channel, voices, onSaved}: {channel: Channel; voices: 
       music_url: musicUrl || null,
       hero_video_provider: heroProvider || null,
     });
+    push('Channel settings saved.', 'success');
     onSaved();
   };
 
@@ -79,11 +82,11 @@ function ChannelSettings({channel, voices, onSaved}: {channel: Channel; voices: 
 }
 
 export default function Channels() {
+  const {push} = useToast();
   const [channels, setChannels] = useState<Channel[]>([]);
   const [voices, setVoices] = useState<Voice[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<number | null>(null);
-  const [banner, setBanner] = useState<string>('');
   const [presets, setPresets] = useState<any[]>([]);
   const [presetId, setPresetId] = useState('');
   const [selected, setSelected] = useState<number[]>([]);
@@ -103,36 +106,37 @@ export default function Channels() {
     api.get<Voice[]>('/channels/voices').then(({data}) => setVoices(data)).catch(() => undefined);
     api.get('/bulk/presets').then(({data}) => setPresets(data)).catch(() => undefined);
     const params = new URLSearchParams(window.location.search);
-    if (params.get('connected')) setBanner('Channel connected successfully.');
-    if (params.get('error')) setBanner(`Connection failed: ${params.get('error')}`);
+    if (params.get('connected')) push('Channel connected successfully.', 'success');
+    if (params.get('error')) push(`Connection failed: ${params.get('error')}`, 'error');
   }, []);
 
   const applyPreset = async () => {
     if (!presetId || selected.length === 0) return;
     await api.post('/bulk/presets/apply', {channel_ids: selected, preset_id: presetId});
+    push('Preset applied and calendar seeded.', 'success');
     setSelected([]);
     load();
   };
   const bulkRun = async () => {
     if (selected.length === 0) return;
     await api.post('/bulk/channels/run', {channel_ids: selected});
-    alert(`Started pipelines for ${selected.length} channel(s).`);
+    push(`Started pipelines for ${selected.length} channel(s).`, 'success');
   };
   const bulkAutonomy = async (on: boolean) => {
     if (selected.length === 0) return;
     await api.post('/bulk/channels/autonomy', {channel_ids: selected, autonomous: on});
+    push(`Autonomy turned ${on ? 'on' : 'off'} for ${selected.length} channel(s).`, 'success');
     load();
   };
 
   const onboard = async () => {
-    // Kick off the guided OAuth wizard (P1).
     const {data} = await api.get('/auth/youtube/start');
     window.location.href = data.authorization_url;
   };
 
   const runNow = async (channelId: number) => {
     await api.post('/jobs', {channel_id: channelId});
-    alert('Pipeline started. Check Approvals if approval is required.');
+    push('Pipeline started. Check Approvals if approval is required.', 'success');
   };
 
   const toggle = async (c: Channel, field: 'autonomous' | 'require_approval') => {
@@ -142,12 +146,11 @@ export default function Channels() {
 
   return (
     <div>
-      <div className="row" style={{justifyContent: 'space-between'}}>
-        <h2>Channels</h2>
-        <button onClick={onboard}>+ Connect / initiate channel</button>
-      </div>
-
-      {banner && <div className="card"><span className="badge ok">{banner}</span></div>}
+      <PageHeader
+        title="Channels"
+        subtitle="Onboard, configure, and run your channel empire"
+        actions={<button onClick={onboard}>+ Connect / initiate channel</button>}
+      />
 
       {channels.length > 0 && (
         <div className="card">
@@ -168,14 +171,14 @@ export default function Channels() {
       )}
 
       {loading ? (
-        <p>Loading…</p>
+        <SkeletonCards count={4} />
       ) : channels.length === 0 ? (
-        <div className="card">
-          <p>No channels connected yet.</p>
-          <p className="stat-label">
-            Click “Connect / initiate channel” to authorize an existing YouTube channel via OAuth.
-          </p>
-        </div>
+        <EmptyState
+          icon="📺"
+          title="No channels connected yet"
+          hint="Connect an existing YouTube channel via OAuth to start automating."
+          action={<button onClick={onboard}>+ Connect / initiate channel</button>}
+        />
       ) : (
         <div className="grid">
           {channels.map((c) => (
