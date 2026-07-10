@@ -10,6 +10,7 @@ import Approvals from './pages/Approvals';
 import Monetize from './pages/Monetize';
 import Experiments from './pages/Experiments';
 import Library from './pages/Library';
+import Engagement from './pages/Engagement';
 
 const NAV = [
   {to: '/dashboard', label: 'Dashboard', icon: '📊'},
@@ -19,6 +20,7 @@ const NAV = [
   {to: '/calendar', label: 'Calendar', icon: '🗓️'},
   {to: '/monetize', label: 'Monetization', icon: '💰'},
   {to: '/experiments', label: 'Experiments', icon: '🧪'},
+  {to: '/engagement', label: 'Engagement', icon: '💬'},
   {to: '/approvals', label: 'Approvals', icon: '✅'},
 ];
 
@@ -130,6 +132,7 @@ function Shell({onLogout}: {onLogout: () => void}) {
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/monetize" element={<Monetize />} />
             <Route path="/experiments" element={<Experiments />} />
+            <Route path="/engagement" element={<Engagement />} />
             <Route path="/approvals" element={<Approvals />} />
           </Routes>
         </main>

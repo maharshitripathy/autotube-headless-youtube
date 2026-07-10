@@ -34,4 +34,8 @@ celery_app.conf.beat_schedule = {
         "task": "app.workers.tasks.rotate_experiments",
         "schedule": crontab(minute=0, hour="*/6"),  # every 6h: A/B title rotation
     },
+    "engage-comments": {
+        "task": "app.workers.tasks.engage_comments",
+        "schedule": crontab(minute=30, hour="*/4"),  # every 4h: comment engagement
+    },
 }

@@ -92,6 +92,27 @@ def moderate(text: str) -> dict:
         return {"flagged": False, "categories": []}
 
 
+def generate_reply(persona: str, comment: str, video_title: str) -> dict:
+    """Generate a friendly reply to a viewer comment. Returns {action, reply}."""
+    system = (
+        "You manage a YouTube channel's community. Decide whether to reply to a "
+        "comment. Reply warmly and briefly (max 200 chars), on-brand. If the comment "
+        "is spam, hateful, or a troll, choose action 'ignore'. Return strict JSON."
+    )
+    user = (
+        f"Channel persona: {persona or 'friendly and helpful'}\n"
+        f"Video: {video_title}\nComment: {comment}\n"
+        'Return JSON: {"action": "reply"|"ignore", "reply": str}'
+    )
+    resp = _client().chat.completions.create(
+        model="gpt-4o-mini",
+        response_format={"type": "json_object"},
+        messages=[{"role": "system", "content": system},
+                  {"role": "user", "content": user}],
+    )
+    return json.loads(resp.choices[0].message.content)
+
+
 def suggest_topics(niche: str, recent_titles: list[str], count: int = 5) -> list[str]:
     """Ask the model for trending topic ideas given the niche and history."""
     system = "You are a viral content strategist. Return strict JSON."

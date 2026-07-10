@@ -31,6 +31,8 @@ class ChannelUpdate(BaseModel):
     music_url: str | None = None
     music_volume: float | None = None
     hero_video_provider: str | None = None
+    auto_engage: bool | None = None
+    engage_persona: str | None = None
 
 
 class VideoOut(BaseModel):

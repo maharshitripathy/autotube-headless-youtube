@@ -8,6 +8,7 @@ from app.models.cost import CostLedgerEntry
 from app.models.monetization import Monetization
 from app.models.distribution import Distribution
 from app.models.experiment import TitleExperiment
+from app.models.engagement import CommentReply
 
 __all__ = [
     "Channel",
@@ -19,4 +20,5 @@ __all__ = [
     "Monetization",
     "Distribution",
     "TitleExperiment",
+    "CommentReply",
 ]

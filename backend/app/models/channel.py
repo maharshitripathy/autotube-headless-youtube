@@ -36,6 +36,10 @@ class Channel(Base, TimestampMixin):
     # AI-video provider for hero clips (veo | runway | luma | kling | none)
     hero_video_provider: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
+    # Comment engagement
+    auto_engage: Mapped[bool] = mapped_column(Boolean, default=False)
+    engage_persona: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     # Per-channel cost cap override (0 = use global default)
     daily_cost_cap_usd: Mapped[float] = mapped_column(Float, default=0.0)
 

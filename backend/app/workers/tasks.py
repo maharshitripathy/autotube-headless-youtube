@@ -48,3 +48,15 @@ def rotate_experiments() -> dict:
     """Advance A/B title experiments and settle winners."""
     from app.orchestrator.runner import rotate_title_experiments
     return rotate_title_experiments()
+
+
+@celery_app.task(name="app.workers.tasks.engage_comments")
+def engage_comments() -> dict:
+    """Auto-reply to recent comments for channels with engagement enabled."""
+    from app.database import SessionLocal
+    from app.services.engagement import engage_all_channels
+    db = SessionLocal()
+    try:
+        return engage_all_channels(db)
+    finally:
+        db.close()

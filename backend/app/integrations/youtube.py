@@ -227,6 +227,43 @@ def post_top_comment(channel, video_id: str, text: str) -> str | None:
     return resp.get("id")
 
 
+def list_recent_comments(channel, max_results: int = 20) -> list[dict]:
+    """List recent top-level comments across the channel's videos."""
+    creds = credentials_for_channel(channel)
+    yt = build("youtube", "v3", credentials=creds)
+    resp = yt.commentThreads().list(
+        part="snippet",
+        allThreadsRelatedToChannelId=channel.youtube_channel_id,
+        order="time",
+        maxResults=max_results,
+        textFormat="plainText",
+    ).execute()
+
+    comments = []
+    for item in resp.get("items", []):
+        top = item["snippet"]["topLevelComment"]
+        snip = top["snippet"]
+        comments.append({
+            "comment_id": top["id"],
+            "video_id": snip.get("videoId"),
+            "author": snip.get("authorDisplayName"),
+            "text": snip.get("textOriginal", ""),
+            "reply_count": item["snippet"].get("totalReplyCount", 0),
+        })
+    return comments
+
+
+def reply_to_comment(channel, parent_id: str, text: str) -> str | None:
+    """Post a reply to a top-level comment."""
+    creds = credentials_for_channel(channel)
+    yt = build("youtube", "v3", credentials=creds)
+    resp = yt.comments().insert(
+        part="snippet",
+        body={"snippet": {"parentId": parent_id, "textOriginal": text}},
+    ).execute()
+    return resp.get("id")
+
+
 def fetch_revenue(channel, days: int = 28) -> list[dict]:
     """Fetch daily monetary metrics. Returns [] if the channel isn't monetized
     or the monetary scope wasn't granted."""
