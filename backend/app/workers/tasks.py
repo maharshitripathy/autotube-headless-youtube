@@ -60,3 +60,21 @@ def engage_comments() -> dict:
         return engage_all_channels(db)
     finally:
         db.close()
+
+
+@celery_app.task(name="app.workers.tasks.sync_ads")
+def sync_ads() -> dict:
+    """Sync live ad-campaign stats and record incremental spend; auto-plan if enabled."""
+    from app.database import SessionLocal
+    from app.models.channel import Channel
+    from app.models.settings import get_app_settings
+    from app.services import ads
+    db = SessionLocal()
+    try:
+        result = ads.sync_campaigns(db)
+        if get_app_settings(db).ad_auto_promote:
+            for ch in db.query(Channel).filter(Channel.active).all():
+                ads.plan_campaigns(db, ch)
+        return result
+    finally:
+        db.close()

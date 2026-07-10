@@ -38,4 +38,8 @@ celery_app.conf.beat_schedule = {
         "task": "app.workers.tasks.engage_comments",
         "schedule": crontab(minute=30, hour="*/4"),  # every 4h: comment engagement
     },
+    "sync-ads": {
+        "task": "app.workers.tasks.sync_ads",
+        "schedule": crontab(hour=4, minute=0),  # daily: sync ad spend + auto-plan
+    },
 }

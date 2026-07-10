@@ -10,6 +10,7 @@ from app.models.distribution import Distribution
 from app.models.experiment import TitleExperiment
 from app.models.engagement import CommentReply
 from app.models.settings import AppSettings
+from app.models.ad_campaign import AdCampaign
 
 __all__ = [
     "Channel",
@@ -23,4 +24,5 @@ __all__ = [
     "TitleExperiment",
     "CommentReply",
     "AppSettings",
+    "AdCampaign",
 ]
