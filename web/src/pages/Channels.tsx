@@ -84,6 +84,12 @@ export default function Channels() {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [banner, setBanner] = useState<string>('');
+  const [presets, setPresets] = useState<any[]>([]);
+  const [presetId, setPresetId] = useState('');
+  const [selected, setSelected] = useState<number[]>([]);
+
+  const toggleSelect = (id: number) =>
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
   const load = async () => {
     setLoading(true);
@@ -95,10 +101,28 @@ export default function Channels() {
   useEffect(() => {
     load();
     api.get<Voice[]>('/channels/voices').then(({data}) => setVoices(data)).catch(() => undefined);
+    api.get('/bulk/presets').then(({data}) => setPresets(data)).catch(() => undefined);
     const params = new URLSearchParams(window.location.search);
     if (params.get('connected')) setBanner('Channel connected successfully.');
     if (params.get('error')) setBanner(`Connection failed: ${params.get('error')}`);
   }, []);
+
+  const applyPreset = async () => {
+    if (!presetId || selected.length === 0) return;
+    await api.post('/bulk/presets/apply', {channel_ids: selected, preset_id: presetId});
+    setSelected([]);
+    load();
+  };
+  const bulkRun = async () => {
+    if (selected.length === 0) return;
+    await api.post('/bulk/channels/run', {channel_ids: selected});
+    alert(`Started pipelines for ${selected.length} channel(s).`);
+  };
+  const bulkAutonomy = async (on: boolean) => {
+    if (selected.length === 0) return;
+    await api.post('/bulk/channels/autonomy', {channel_ids: selected, autonomous: on});
+    load();
+  };
 
   const onboard = async () => {
     // Kick off the guided OAuth wizard (P1).
@@ -125,6 +149,24 @@ export default function Channels() {
 
       {banner && <div className="card"><span className="badge ok">{banner}</span></div>}
 
+      {channels.length > 0 && (
+        <div className="card">
+          <div className="row" style={{flexWrap: 'wrap', gap: 10}}>
+            <strong>{selected.length} selected</strong>
+            <select value={presetId} onChange={(e) => setPresetId(e.target.value)} style={{width: 200}}>
+              <option value="">Choose preset…</option>
+              {presets.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <button className="secondary" onClick={applyPreset}>Apply preset</button>
+            <button onClick={bulkRun}>Run selected</button>
+            <button className="secondary" onClick={() => bulkAutonomy(true)}>Autonomy on</button>
+            <button className="secondary" onClick={() => bulkAutonomy(false)}>Autonomy off</button>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <p>Loading…</p>
       ) : channels.length === 0 ? (
@@ -139,6 +181,7 @@ export default function Channels() {
           {channels.map((c) => (
             <div className="card" key={c.id}>
               <div className="row">
+                <input type="checkbox" style={{width: 'auto'}} checked={selected.includes(c.id)} onChange={() => toggleSelect(c.id)} />
                 {c.thumbnail_url && (
                   <img src={c.thumbnail_url} width={40} height={40} style={{borderRadius: 8}} />
                 )}
