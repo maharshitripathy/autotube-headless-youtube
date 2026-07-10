@@ -104,6 +104,51 @@ def revenue_summary(channel_id: int, days: int = 28, db: Session = Depends(get_d
     }
 
 
+@router.get("/video/{video_id}")
+def video_analytics(video_id: int, days: int = 28, db: Session = Depends(get_db)):
+    """Per-video drill-down: live stats, daily series, and production cost."""
+    from app.integrations import youtube
+    from app.models.video import Video
+
+    video = db.get(Video, video_id)
+    if not video:
+        raise HTTPException(404, "Video not found")
+    channel = db.get(Channel, video.channel_id)
+
+    stats: dict = {}
+    daily: list[dict] = []
+    if video.youtube_video_id:
+        try:
+            stats = youtube.get_video_stats(channel, video.youtube_video_id)
+        except Exception:
+            stats = {}
+        for row in youtube.fetch_video_analytics(channel, video.youtube_video_id, days=days):
+            daily.append({
+                "day": row.get("day"),
+                "views": int(row.get("views", 0)),
+                "watch_time_minutes": float(row.get("estimatedMinutesWatched", 0)),
+                "avg_view_duration_sec": float(row.get("averageViewDuration", 0)),
+            })
+
+    production_cost = float(db.execute(
+        select(func.coalesce(func.sum(CostLedgerEntry.amount_usd), 0.0)).where(
+            CostLedgerEntry.video_id == video_id
+        )
+    ).scalar_one())
+
+    return {
+        "video_id": video_id,
+        "youtube_video_id": video.youtube_video_id,
+        "stats": {
+            "views": stats.get("viewCount", 0),
+            "likes": stats.get("likeCount", 0),
+            "comments": stats.get("commentCount", 0),
+        },
+        "daily": daily,
+        "production_cost_usd": round(production_cost, 2),
+    }
+
+
 @router.get("/{channel_id}/daily")
 def daily_series(channel_id: int, days: int = 28, db: Session = Depends(get_db)):
     """Daily views/watch-time series for charting."""

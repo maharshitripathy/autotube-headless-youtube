@@ -8,6 +8,12 @@ interface Detail {
   distributions: {platform: string; status: string; caption: string | null; download_url: string | null; external_id: string | null}[];
 }
 
+interface VideoStats {
+  stats: {views: number; likes: number; comments: number};
+  daily: {day: string; views: number}[];
+  production_cost_usd: number;
+}
+
 const STATUSES = ['all', 'published', 'scheduled', 'ready', 'rendering', 'draft', 'failed'];
 
 function VideoCard({video, onOpen}: {video: VideoOut; onOpen: () => void}) {
@@ -50,6 +56,7 @@ export default function Library() {
   const [detail, setDetail] = useState<Detail | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [stats, setStats] = useState<VideoStats | null>(null);
 
   useEffect(() => {
     api.get<Channel[]>('/channels').then(({data}) => setChannels(data));
@@ -66,8 +73,10 @@ export default function Library() {
   const open = async (id: number) => {
     setDrawerOpen(true);
     setDetail(null);
+    setStats(null);
     const {data} = await api.get<Detail>(`/videos/${id}/detail`);
     setDetail(data);
+    api.get<VideoStats>(`/analytics/video/${id}`).then(({data}) => setStats(data)).catch(() => undefined);
   };
 
   const regenerateThumb = async () => {
@@ -150,6 +159,29 @@ export default function Library() {
               <p style={{marginTop: 10}}>
                 <a href={`https://youtube.com/watch?v=${detail.video.youtube_video_id}`} target="_blank" rel="noreferrer">▶ Open on YouTube</a>
               </p>
+            )}
+            {stats && (
+              <>
+                <h4 style={{margin: '14px 0 4px'}}>Performance</h4>
+                <div className="row wrap" style={{gap: 8}}>
+                  <span className="badge info">👁 {stats.stats.views.toLocaleString()} views</span>
+                  <span className="badge info">👍 {stats.stats.likes.toLocaleString()}</span>
+                  <span className="badge info">💬 {stats.stats.comments.toLocaleString()}</span>
+                  <span className="badge">💵 ${stats.production_cost_usd} cost</span>
+                </div>
+                {stats.daily.length > 0 && (
+                  <svg width="100%" viewBox={`0 0 ${stats.daily.length * 12} 60`} preserveAspectRatio="none" style={{marginTop: 10}}>
+                    {(() => {
+                      const max = Math.max(1, ...stats.daily.map((d) => d.views));
+                      return stats.daily.map((d, i) => (
+                        <rect key={i} x={i * 12 + 1} y={60 - (d.views / max) * 56} width={10} height={(d.views / max) * 56} rx={2} fill="#5b8cff">
+                          <title>{`${d.day}: ${d.views}`}</title>
+                        </rect>
+                      ));
+                    })()}
+                  </svg>
+                )}
+              </>
             )}
             <h4 style={{margin: '14px 0 4px'}}>Description</h4>
             <p className="muted" style={{fontSize: 13, whiteSpace: 'pre-wrap'}}>{detail.video.description || '—'}</p>

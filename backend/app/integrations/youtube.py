@@ -264,6 +264,27 @@ def reply_to_comment(channel, parent_id: str, text: str) -> str | None:
     return resp.get("id")
 
 
+def fetch_video_analytics(channel, youtube_video_id: str, days: int = 28) -> list[dict]:
+    """Fetch daily analytics rows for a single video."""
+    creds = credentials_for_channel(channel)
+    ya = build("youtubeAnalytics", "v2", credentials=creds)
+    end = date.today()
+    start = end - timedelta(days=days)
+    try:
+        resp = ya.reports().query(
+            ids=f"channel=={channel.youtube_channel_id}",
+            startDate=start.isoformat(),
+            endDate=end.isoformat(),
+            metrics="views,estimatedMinutesWatched,averageViewDuration,likes,comments",
+            dimensions="day",
+            filters=f"video=={youtube_video_id}",
+        ).execute()
+    except Exception:
+        return []
+    headers = [h["name"] for h in resp.get("columnHeaders", [])]
+    return [dict(zip(headers, row)) for row in resp.get("rows", [])]
+
+
 def fetch_revenue(channel, days: int = 28) -> list[dict]:
     """Fetch daily monetary metrics. Returns [] if the channel isn't monetized
     or the monetary scope wasn't granted."""
