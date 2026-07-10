@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {NavLink, Navigate, Route, Routes} from 'react-router-dom';
 import {api, clearCredentials, hasCredentials, setCredentials} from './api';
 import Channels from './pages/Channels';
@@ -45,6 +45,14 @@ function Login({onLogin}: {onLogin: () => void}) {
 }
 
 function Shell({onLogout}: {onLogout: () => void}) {
+  const [status, setStatus] = useState<any>(null);
+  useEffect(() => {
+    const load = () => api.get('/system/status').then(({data}) => setStatus(data)).catch(() => undefined);
+    load();
+    const t = setInterval(load, 10000);
+    return () => clearInterval(t);
+  }, []);
+
   return (
     <div className="layout">
       <aside className="sidebar">
@@ -55,6 +63,14 @@ function Shell({onLogout}: {onLogout: () => void}) {
           <NavLink to="/calendar">Calendar</NavLink>
           <NavLink to="/approvals">Approvals</NavLink>
         </nav>
+        {status && (
+          <div className="card" style={{marginTop: 20, fontSize: 12}}>
+            <div className="stat-label">Autonomous: {status.channels_autonomous}/{status.channels_active}</div>
+            <div className="stat-label">Awaiting approval: {status.jobs_awaiting_approval}</div>
+            <div className="stat-label">Running: {status.jobs_running}</div>
+            <div className="stat-label">Spend 24h: ${status.spend_last_24h_usd}</div>
+          </div>
+        )}
         <div style={{marginTop: 24}}>
           <button className="secondary" onClick={onLogout}>Sign out</button>
         </div>

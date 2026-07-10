@@ -34,3 +34,10 @@ def scheduler_tick() -> dict:
     """Enqueue pipeline runs for channels whose calendar entries are due (P5)."""
     from app.orchestrator.runner import tick_scheduler
     return tick_scheduler()
+
+
+@celery_app.task(name="app.workers.tasks.daily_maintenance")
+def daily_maintenance() -> dict:
+    """Daily: refresh analytics and replan the calendar for all active channels."""
+    from app.orchestrator.runner import run_daily_maintenance
+    return run_daily_maintenance()

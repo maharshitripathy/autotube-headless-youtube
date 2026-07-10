@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from celery import Celery
+from celery.schedules import crontab
 
 from app.config import settings
 
@@ -24,5 +25,9 @@ celery_app.conf.beat_schedule = {
     "scheduler-tick": {
         "task": "app.workers.tasks.scheduler_tick",
         "schedule": 300.0,  # every 5 minutes
+    },
+    "daily-maintenance": {
+        "task": "app.workers.tasks.daily_maintenance",
+        "schedule": crontab(hour=3, minute=0),  # 03:00 UTC: refresh analytics + replan
     },
 }

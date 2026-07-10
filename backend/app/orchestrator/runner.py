@@ -120,6 +120,24 @@ def refresh_channel_analytics(channel_id: int) -> dict:
         db.close()
 
 
+def run_daily_maintenance() -> dict:
+    """Refresh analytics and replan the calendar for every active channel."""
+    db = SessionLocal()
+    results: dict = {}
+    try:
+        channels = db.query(Channel).filter(Channel.active).all()
+        for channel in channels:
+            try:
+                count = ANALYTICS_AGENT.refresh(db, channel)
+                added = STRATEGY_AGENT.plan(db, channel)
+                results[channel.id] = {"snapshots": count, "planned": added}
+            except Exception as exc:  # keep going for other channels
+                results[channel.id] = {"error": str(exc)}
+        return results
+    finally:
+        db.close()
+
+
 def tick_scheduler() -> dict:
     """Enqueue runs for autonomous channels whose calendar entries are due."""
     from datetime import datetime, timezone
