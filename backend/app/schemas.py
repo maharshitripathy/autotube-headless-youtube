@@ -30,6 +30,7 @@ class ChannelUpdate(BaseModel):
     distribute_platforms: list | None = None
     music_url: str | None = None
     music_volume: float | None = None
+    hero_video_provider: str | None = None
 
 
 class VideoOut(BaseModel):

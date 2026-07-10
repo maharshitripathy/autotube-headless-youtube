@@ -33,6 +33,9 @@ class Channel(Base, TimestampMixin):
     music_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     music_volume: Mapped[float] = mapped_column(Float, default=0.12)
 
+    # AI-video provider for hero clips (veo | runway | luma | kling | none)
+    hero_video_provider: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
     # Per-channel cost cap override (0 = use global default)
     daily_cost_cap_usd: Mapped[float] = mapped_column(Float, default=0.0)
 

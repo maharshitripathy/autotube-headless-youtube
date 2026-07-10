@@ -8,7 +8,7 @@ Strategy per beat:
 from __future__ import annotations
 
 from app.agents.base import BaseAgent, PipelineContext
-from app.integrations import openai_client, pexels_client, vertex_veo
+from app.integrations import openai_client, pexels_client, video_providers
 from app.models.enums import AgentStep
 from app.services import cost_guard, storage
 
@@ -31,20 +31,21 @@ class VisualsAgent(BaseAgent):
         ctx.log(f"prepared {len(visuals)} visuals")
 
     def _resolve_beat_visual(self, ctx: PipelineContext, index: int, query: str, hero: bool) -> dict:
-        # Hero shot via Veo (optional).
-        if hero and vertex_veo.is_enabled():
+        # Hero shot via the selected AI-video provider (optional).
+        provider = video_providers.select_provider(ctx.channel) if hero else None
+        if provider:
             try:
-                cost_guard.check_budget(ctx.db, vertex_veo.EST_VEO_USD_PER_CLIP,
+                cost = provider.estimate_cost(5)
+                cost_guard.check_budget(ctx.db, cost,
                                         channel_id=ctx.channel.id, video_id=ctx.video.id)
-                clip = vertex_veo.generate_clip(query)
-                key = f"channels/{ctx.channel.id}/videos/{ctx.video.id}/veo_{index}.mp4"
+                clip = provider.generate_clip(query)
+                key = f"channels/{ctx.channel.id}/videos/{ctx.video.id}/{provider.name}_{index}.mp4"
                 storage.upload_bytes(key, clip, content_type="video/mp4")
-                cost_guard.record_spend(ctx.db, "vertex", "veo",
-                                        vertex_veo.EST_VEO_USD_PER_CLIP,
+                cost_guard.record_spend(ctx.db, provider.name, "ai_video", cost,
                                         channel_id=ctx.channel.id, video_id=ctx.video.id)
-                return {"type": "veo", "key": key, "query": query}
+                return {"type": "veo", "key": key, "query": query, "provider": provider.name}
             except Exception as exc:  # fall back gracefully
-                ctx.log(f"veo failed ({exc}); falling back to stock")
+                ctx.log(f"{provider.name} failed ({exc}); falling back to stock")
 
         # Stock video backbone.
         try:

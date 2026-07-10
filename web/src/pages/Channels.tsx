@@ -13,6 +13,7 @@ function ChannelSettings({channel, voices, onSaved}: {channel: Channel; voices: 
   const [cap, setCap] = useState(0);
   const [platforms, setPlatforms] = useState<string[]>([]);
   const [musicUrl, setMusicUrl] = useState('');
+  const [heroProvider, setHeroProvider] = useState('');
 
   const togglePlatform = (p: string) => {
     setPlatforms((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));
@@ -26,6 +27,7 @@ function ChannelSettings({channel, voices, onSaved}: {channel: Channel; voices: 
       daily_cost_cap_usd: cap,
       distribute_platforms: platforms,
       music_url: musicUrl || null,
+      hero_video_provider: heroProvider || null,
     });
     onSaved();
   };
@@ -60,6 +62,15 @@ function ChannelSettings({channel, voices, onSaved}: {channel: Channel; voices: 
       </div>
       <label>Background music URL (royalty-free, optional)</label>
       <input value={musicUrl} onChange={(e) => setMusicUrl(e.target.value)} placeholder="https://... .mp3" />
+      <label>AI hero-clip provider</label>
+      <select value={heroProvider} onChange={(e) => setHeroProvider(e.target.value)}>
+        <option value="">Default</option>
+        <option value="veo">Google Veo 3</option>
+        <option value="runway">Runway Gen-4</option>
+        <option value="luma">Luma Dream Machine</option>
+        <option value="kling">Kling</option>
+        <option value="none">None (stock/AI images only)</option>
+      </select>
       <div style={{marginTop: 12}}>
         <button onClick={save}>Save settings</button>
       </div>

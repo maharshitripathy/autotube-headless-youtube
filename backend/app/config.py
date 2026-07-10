@@ -39,6 +39,13 @@ class Settings(BaseSettings):
     vertex_location: str = "us-central1"
     veo_enabled: bool = False
 
+    # Additional AI-video providers (pluggable hero clips)
+    video_provider: str = "veo"  # veo | runway | luma | kling | none
+    runway_api_key: str = ""
+    luma_api_key: str = ""
+    kling_access_key: str = ""
+    kling_secret_key: str = ""
+
     # Whisper
     whisper_model: str = "base"
     whisper_device: str = "cpu"
