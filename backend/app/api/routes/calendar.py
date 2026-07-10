@@ -57,3 +57,16 @@ def delete_entry(entry_id: int, db: Session = Depends(get_db)):
     if entry:
         db.delete(entry)
         db.commit()
+
+
+@router.post("/plan", status_code=201)
+def auto_plan(channel_id: int, horizon_days: int = 7, db: Session = Depends(get_db)):
+    """Ask the strategy agent to fill the calendar with fresh topic ideas."""
+    from app.models.channel import Channel
+    from app.agents import STRATEGY_AGENT
+
+    channel = db.get(Channel, channel_id)
+    if not channel:
+        raise HTTPException(404, "Channel not found")
+    added = STRATEGY_AGENT.plan(db, channel, horizon_days=horizon_days)
+    return {"planned": added}

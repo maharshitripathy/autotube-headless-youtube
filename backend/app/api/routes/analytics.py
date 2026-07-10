@@ -61,3 +61,27 @@ def refresh_analytics(channel_id: int, db: Session = Depends(get_db)):
     from app.workers.tasks import pull_analytics
     pull_analytics.delay(channel_id)
     return {"status": "queued"}
+
+
+@router.get("/{channel_id}/daily")
+def daily_series(channel_id: int, days: int = 28, db: Session = Depends(get_db)):
+    """Daily views/watch-time series for charting."""
+    since = date.today() - timedelta(days=days)
+    rows = db.execute(
+        select(AnalyticsSnapshot)
+        .where(
+            AnalyticsSnapshot.channel_id == channel_id,
+            AnalyticsSnapshot.day >= since,
+            AnalyticsSnapshot.youtube_video_id.is_(None),
+        )
+        .order_by(AnalyticsSnapshot.day)
+    ).scalars().all()
+    return [
+        {
+            "day": r.day.isoformat(),
+            "views": r.views,
+            "watch_time_minutes": r.watch_time_minutes,
+            "subscribers_gained": r.subscribers_gained,
+        }
+        for r in rows
+    ]

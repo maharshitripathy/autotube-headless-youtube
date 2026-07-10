@@ -42,15 +42,24 @@ export default function Calendar() {
     if (selected != null) load(selected);
   };
 
+  const autoPlan = async () => {
+    if (selected == null) return;
+    await api.post('/calendar/plan', null, {params: {channel_id: selected}});
+    load(selected);
+  };
+
   return (
     <div>
       <div className="row" style={{justifyContent: 'space-between'}}>
         <h2>Content Calendar</h2>
-        <select value={selected ?? ''} onChange={(e) => setSelected(Number(e.target.value))} style={{width: 240}}>
-          {channels.map((c) => (
-            <option key={c.id} value={c.id}>{c.title}</option>
-          ))}
-        </select>
+        <div className="row">
+          <button className="secondary" onClick={autoPlan}>Auto-plan next week</button>
+          <select value={selected ?? ''} onChange={(e) => setSelected(Number(e.target.value))} style={{width: 240}}>
+            {channels.map((c) => (
+              <option key={c.id} value={c.id}>{c.title}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="card">
