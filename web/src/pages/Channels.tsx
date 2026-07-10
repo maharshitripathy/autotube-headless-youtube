@@ -1,6 +1,7 @@
 import {useEffect, useState} from 'react';
 import {api, Channel} from '../api';
 import {EmptyState, PageHeader, SkeletonCards, useToast} from '../components/ui';
+import {OnboardingWizard} from '../components/OnboardingWizard';
 
 interface Voice {
   voice_id: string;
@@ -90,6 +91,8 @@ export default function Channels() {
   const [presets, setPresets] = useState<any[]>([]);
   const [presetId, setPresetId] = useState('');
   const [selected, setSelected] = useState<number[]>([]);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardStep, setWizardStep] = useState<'connect' | 'configure'>('connect');
 
   const toggleSelect = (id: number) =>
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -106,7 +109,11 @@ export default function Channels() {
     api.get<Voice[]>('/channels/voices').then(({data}) => setVoices(data)).catch(() => undefined);
     api.get('/bulk/presets').then(({data}) => setPresets(data)).catch(() => undefined);
     const params = new URLSearchParams(window.location.search);
-    if (params.get('connected')) push('Channel connected successfully.', 'success');
+    if (params.get('connected')) {
+      push('Channel connected successfully.', 'success');
+      setWizardStep('configure');
+      setWizardOpen(true);
+    }
     if (params.get('error')) push(`Connection failed: ${params.get('error')}`, 'error');
   }, []);
 
@@ -149,7 +156,20 @@ export default function Channels() {
       <PageHeader
         title="Channels"
         subtitle="Onboard, configure, and run your channel empire"
-        actions={<button onClick={onboard}>+ Connect / initiate channel</button>}
+        actions={
+          <>
+            <button className="secondary" onClick={() => { setWizardStep(channels.length ? 'configure' : 'connect'); setWizardOpen(true); }}>Setup wizard</button>
+            <button onClick={onboard}>+ Connect / initiate channel</button>
+          </>
+        }
+      />
+
+      <OnboardingWizard
+        open={wizardOpen}
+        startStep={wizardStep}
+        channels={channels}
+        onClose={() => setWizardOpen(false)}
+        onDone={load}
       />
 
       {channels.length > 0 && (
@@ -177,7 +197,7 @@ export default function Channels() {
           icon="📺"
           title="No channels connected yet"
           hint="Connect an existing YouTube channel via OAuth to start automating."
-          action={<button onClick={onboard}>+ Connect / initiate channel</button>}
+          action={<button onClick={() => { setWizardStep('connect'); setWizardOpen(true); }}>Start setup wizard</button>}
         />
       ) : (
         <div className="grid">
