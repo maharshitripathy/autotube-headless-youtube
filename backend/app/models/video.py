@@ -38,3 +38,7 @@ class Video(Base, TimestampMixin):
     pinned_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     scheduled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Quality assurance
+    qa_passed: Mapped[bool | None] = mapped_column(nullable=True)
+    qa_notes: Mapped[list | None] = mapped_column(JSON, nullable=True)

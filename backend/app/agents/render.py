@@ -33,6 +33,8 @@ class RenderAgent(BaseAgent):
             "captions": ctx.data.get("captions", []),
             "visuals": visuals,
             "hook": ctx.data.get("hook"),
+            "music_url": ctx.channel.music_url,
+            "music_volume": ctx.channel.music_volume,
         }
 
         with httpx.Client(timeout=600) as client:

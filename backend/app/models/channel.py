@@ -29,6 +29,10 @@ class Channel(Base, TimestampMixin):
     uploads_per_day: Mapped[int] = mapped_column(default=1)
     voice_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
 
+    # Background music (royalty-free track URL mixed under narration)
+    music_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    music_volume: Mapped[float] = mapped_column(Float, default=0.12)
+
     # Per-channel cost cap override (0 = use global default)
     daily_cost_cap_usd: Mapped[float] = mapped_column(Float, default=0.0)
 

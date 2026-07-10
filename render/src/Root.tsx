@@ -20,6 +20,8 @@ export const RemotionRoot: React.FC = () => {
         captions: [],
         visuals: [],
         hook: null,
+        music_url: null,
+        music_volume: 0.12,
       }}
       // Adjust the timeline length to match the narration duration.
       calculateMetadata={({props}) => ({

@@ -64,6 +64,17 @@ def generate_image(prompt: str, size: str = "1024x1792") -> bytes:
     return base64.b64decode(resp.data[0].b64_json)
 
 
+def moderate(text: str) -> dict:
+    """Run OpenAI moderation. Returns {flagged: bool, categories: [str]}."""
+    try:
+        resp = _client().moderations.create(model="omni-moderation-latest", input=text)
+        result = resp.results[0]
+        flagged_cats = [k for k, v in result.categories.__dict__.items() if v]
+        return {"flagged": bool(result.flagged), "categories": flagged_cats}
+    except Exception:
+        return {"flagged": False, "categories": []}
+
+
 def suggest_topics(niche: str, recent_titles: list[str], count: int = 5) -> list[str]:
     """Ask the model for trending topic ideas given the niche and history."""
     system = "You are a viral content strategist. Return strict JSON."

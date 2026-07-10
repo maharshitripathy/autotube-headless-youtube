@@ -116,12 +116,13 @@ const Captions: React.FC<{captions: ShortProps['captions']}> = ({captions}) => {
   );
 };
 
-export const Short: React.FC<ShortProps> = ({audio_url, captions, visuals}) => {
+export const Short: React.FC<ShortProps> = ({audio_url, captions, visuals, music_url, music_volume}) => {
   const {durationInFrames} = useVideoConfig();
   return (
     <AbsoluteFill style={{backgroundColor: '#000'}}>
       <VisualLayer visuals={visuals} durationInFrames={durationInFrames} />
       <Captions captions={captions} />
+      {music_url ? <Audio src={music_url} volume={music_volume ?? 0.12} loop /> : null}
       {audio_url ? <Audio src={audio_url} /> : null}
     </AbsoluteFill>
   );

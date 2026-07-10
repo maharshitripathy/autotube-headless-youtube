@@ -20,6 +20,8 @@ export const shortSchema = z.object({
   captions: z.array(captionWord).default([]),
   visuals: z.array(visual).default([]),
   hook: z.string().nullable().default(null),
+  music_url: z.string().nullable().default(null),
+  music_volume: z.number().default(0.12),
 });
 
 export type ShortProps = z.infer<typeof shortSchema>;

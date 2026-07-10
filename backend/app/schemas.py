@@ -28,6 +28,8 @@ class ChannelUpdate(BaseModel):
     voice_id: str | None = None
     daily_cost_cap_usd: float | None = None
     distribute_platforms: list | None = None
+    music_url: str | None = None
+    music_volume: float | None = None
 
 
 class VideoOut(BaseModel):
@@ -42,6 +44,8 @@ class VideoOut(BaseModel):
     youtube_video_id: str | None = None
     scheduled_at: datetime | None = None
     published_at: datetime | None = None
+    qa_passed: bool | None = None
+    qa_notes: list | None = None
 
 
 class JobOut(BaseModel):

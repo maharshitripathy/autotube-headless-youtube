@@ -16,6 +16,7 @@ from app.models.enums import JobStatus, VideoStatus
 from app.models.job import Job
 from app.models.video import Video
 from app.services.cost_guard import CostCapExceeded
+from app.agents.qa import QAFailed
 
 logger = logging.getLogger("autotube.orchestrator")
 
@@ -56,6 +57,11 @@ def run_job(job_id: int) -> dict:
         except CostCapExceeded as exc:
             job.status = JobStatus.failed
             job.error = f"cost cap: {exc}"
+            db.commit()
+            return {"status": "failed", "reason": str(exc)}
+        except QAFailed as exc:
+            job.status = JobStatus.failed
+            job.error = f"qa: {exc}"
             db.commit()
             return {"status": "failed", "reason": str(exc)}
 
