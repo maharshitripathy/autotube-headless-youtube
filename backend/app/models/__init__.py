@@ -6,6 +6,7 @@ from app.models.calendar import CalendarEntry
 from app.models.analytics import AnalyticsSnapshot
 from app.models.cost import CostLedgerEntry
 from app.models.monetization import Monetization
+from app.models.distribution import Distribution
 
 __all__ = [
     "Channel",
@@ -15,4 +16,5 @@ __all__ = [
     "AnalyticsSnapshot",
     "CostLedgerEntry",
     "Monetization",
+    "Distribution",
 ]

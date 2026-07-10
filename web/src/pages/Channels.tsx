@@ -11,6 +11,11 @@ function ChannelSettings({channel, voices, onSaved}: {channel: Channel; voices: 
   const [uploads, setUploads] = useState(channel.uploads_per_day);
   const [voiceId, setVoiceId] = useState('');
   const [cap, setCap] = useState(0);
+  const [platforms, setPlatforms] = useState<string[]>([]);
+
+  const togglePlatform = (p: string) => {
+    setPlatforms((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));
+  };
 
   const save = async () => {
     await api.patch(`/channels/${channel.id}`, {
@@ -18,6 +23,7 @@ function ChannelSettings({channel, voices, onSaved}: {channel: Channel; voices: 
       uploads_per_day: uploads,
       voice_id: voiceId || null,
       daily_cost_cap_usd: cap,
+      distribute_platforms: platforms,
     });
     onSaved();
   };
@@ -37,6 +43,19 @@ function ChannelSettings({channel, voices, onSaved}: {channel: Channel; voices: 
       </select>
       <label>Daily cost cap (USD, 0 = global default)</label>
       <input type="number" min={0} step={0.5} value={cap} onChange={(e) => setCap(Number(e.target.value))} />
+      <label>Cross-post to</label>
+      <div className="row">
+        {['tiktok', 'reels'].map((p) => (
+          <span
+            key={p}
+            className={`badge ${platforms.includes(p) ? 'ok' : ''}`}
+            style={{cursor: 'pointer'}}
+            onClick={() => togglePlatform(p)}
+          >
+            {p}
+          </span>
+        ))}
+      </div>
       <div style={{marginTop: 12}}>
         <button onClick={save}>Save settings</button>
       </div>

@@ -1,12 +1,11 @@
 """YouTube channel connected via OAuth."""
 from __future__ import annotations
 
-from sqlalchemy import Boolean, Float, String, Text
+from sqlalchemy import Boolean, Float, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
 from app.models.mixins import TimestampMixin
-
 
 class Channel(Base, TimestampMixin):
     __tablename__ = "channels"
@@ -32,5 +31,8 @@ class Channel(Base, TimestampMixin):
 
     # Per-channel cost cap override (0 = use global default)
     daily_cost_cap_usd: Mapped[float] = mapped_column(Float, default=0.0)
+
+    # Cross-post targets, e.g. ["tiktok", "reels"]
+    distribute_platforms: Mapped[list | None] = mapped_column(JSON, default=list)
 
     active: Mapped[bool] = mapped_column(Boolean, default=True)

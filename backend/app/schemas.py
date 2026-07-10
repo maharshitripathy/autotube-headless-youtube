@@ -27,6 +27,7 @@ class ChannelUpdate(BaseModel):
     uploads_per_day: int | None = None
     voice_id: str | None = None
     daily_cost_cap_usd: float | None = None
+    distribute_platforms: list | None = None
 
 
 class VideoOut(BaseModel):

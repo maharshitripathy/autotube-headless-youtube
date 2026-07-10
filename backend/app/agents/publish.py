@@ -57,3 +57,12 @@ class PublishAgent(BaseAgent):
 
         ctx.db.commit()
         ctx.log(f"published youtube video {video_id}")
+
+        # Repurpose to other platforms (best-effort).
+        if not publish_at and (ctx.channel.distribute_platforms or []):
+            try:
+                from app.services.distribution import distribute_video
+                dists = distribute_video(ctx.db, ctx.video)
+                ctx.log(f"prepared {len(dists)} cross-platform distributions")
+            except Exception as exc:
+                ctx.log(f"distribution failed: {exc}")
