@@ -20,6 +20,26 @@
 
 * { box-sizing: border-box; }
 
+:root[data-theme="light"] {
+  --bg: #f5f6fa;
+  --bg-2: #ffffff;
+  --panel: #ffffff;
+  --panel-2: #eef0f6;
+  --panel-3: #f0f2f7;
+  --border: #e2e5ee;
+  --border-2: #d3d7e3;
+  --text: #1a1c25;
+  --muted: #6b7089;
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+:root[data-theme="light"] body {
+  background:
+    radial-gradient(1000px 500px at 100% -10%, #ece4ff 0%, transparent 55%),
+    radial-gradient(800px 400px at -10% 110%, #e0f0ff 0%, transparent 50%),
+    var(--bg);
+}
+
 html, body, #root { height: 100%; }
 
 body {

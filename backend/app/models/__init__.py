@@ -9,6 +9,7 @@ from app.models.monetization import Monetization
 from app.models.distribution import Distribution
 from app.models.experiment import TitleExperiment
 from app.models.engagement import CommentReply
+from app.models.settings import AppSettings
 
 __all__ = [
     "Channel",
@@ -21,4 +22,5 @@ __all__ = [
     "Distribution",
     "TitleExperiment",
     "CommentReply",
+    "AppSettings",
 ]

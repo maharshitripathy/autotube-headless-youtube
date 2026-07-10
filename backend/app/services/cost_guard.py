@@ -15,6 +15,17 @@ class CostCapExceeded(Exception):
     """Raised when a planned spend would exceed a configured cap."""
 
 
+def _effective_caps(db: Session) -> dict:
+    """Cost caps with runtime AppSettings overrides taking precedence over env."""
+    from app.models.settings import get_app_settings
+    s = get_app_settings(db)
+    return {
+        "per_video": s.cost_cap_per_video_usd or settings.cost_cap_per_video_usd,
+        "per_channel_daily": s.cost_cap_per_channel_daily_usd or settings.cost_cap_per_channel_daily_usd,
+        "global_daily": s.cost_cap_global_daily_usd or settings.cost_cap_global_daily_usd,
+    }
+
+
 def _spend_since(db: Session, since: datetime, *, channel_id: int | None = None,
                  video_id: int | None = None) -> float:
     stmt = select(func.coalesce(func.sum(CostLedgerEntry.amount_usd), 0.0)).where(
@@ -32,9 +43,10 @@ def check_budget(db: Session, estimated_usd: float, *, channel_id: int | None = 
     """Raise CostCapExceeded if `estimated_usd` would breach any active cap."""
     now = datetime.now(timezone.utc)
     day_start = now - timedelta(days=1)
+    caps = _effective_caps(db)
 
     # Per-video cap
-    cap = settings.cost_cap_per_video_usd
+    cap = caps["per_video"]
     if cap and video_id is not None:
         spent = _spend_since(db, datetime.min.replace(tzinfo=timezone.utc), video_id=video_id)
         if spent + estimated_usd > cap:
@@ -44,7 +56,7 @@ def check_budget(db: Session, estimated_usd: float, *, channel_id: int | None = 
     if channel_id is not None:
         channel = db.get(Channel, channel_id)
         cap = (channel.daily_cost_cap_usd if channel and channel.daily_cost_cap_usd
-               else settings.cost_cap_per_channel_daily_usd)
+               else caps["per_channel_daily"])
         if cap:
             spent = _spend_since(db, day_start, channel_id=channel_id)
             if spent + estimated_usd > cap:
@@ -53,7 +65,7 @@ def check_budget(db: Session, estimated_usd: float, *, channel_id: int | None = 
                 )
 
     # Global daily cap
-    cap = settings.cost_cap_global_daily_usd
+    cap = caps["global_daily"]
     if cap:
         spent = _spend_since(db, day_start)
         if spent + estimated_usd > cap:
