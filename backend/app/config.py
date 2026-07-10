@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     youtube_client_secret: str = ""
     youtube_redirect_uri: str = "http://localhost:8000/api/auth/youtube/callback"
 
+    # Web app URL (for post-OAuth redirect)
+    web_app_url: str = "http://localhost:5173"
+
     # Cost guardrails (USD). 0 disables a cap.
     cost_cap_per_video_usd: float = 2.00
     cost_cap_per_channel_daily_usd: float = 10.00

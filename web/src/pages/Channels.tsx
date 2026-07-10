@@ -1,9 +1,55 @@
 import {useEffect, useState} from 'react';
 import {api, Channel} from '../api';
 
+interface Voice {
+  voice_id: string;
+  name: string;
+}
+
+function ChannelSettings({channel, voices, onSaved}: {channel: Channel; voices: Voice[]; onSaved: () => void}) {
+  const [niche, setNiche] = useState(channel.niche ?? '');
+  const [uploads, setUploads] = useState(channel.uploads_per_day);
+  const [voiceId, setVoiceId] = useState('');
+  const [cap, setCap] = useState(0);
+
+  const save = async () => {
+    await api.patch(`/channels/${channel.id}`, {
+      niche: niche || null,
+      uploads_per_day: uploads,
+      voice_id: voiceId || null,
+      daily_cost_cap_usd: cap,
+    });
+    onSaved();
+  };
+
+  return (
+    <div style={{marginTop: 12, borderTop: '1px solid var(--border)', paddingTop: 12}}>
+      <label>Niche</label>
+      <input value={niche} onChange={(e) => setNiche(e.target.value)} placeholder="e.g. space facts" />
+      <label>Uploads per day</label>
+      <input type="number" min={1} max={12} value={uploads} onChange={(e) => setUploads(Number(e.target.value))} />
+      <label>Narration voice</label>
+      <select value={voiceId} onChange={(e) => setVoiceId(e.target.value)}>
+        <option value="">Default</option>
+        {voices.map((v) => (
+          <option key={v.voice_id} value={v.voice_id}>{v.name}</option>
+        ))}
+      </select>
+      <label>Daily cost cap (USD, 0 = global default)</label>
+      <input type="number" min={0} step={0.5} value={cap} onChange={(e) => setCap(Number(e.target.value))} />
+      <div style={{marginTop: 12}}>
+        <button onClick={save}>Save settings</button>
+      </div>
+    </div>
+  );
+}
+
 export default function Channels() {
   const [channels, setChannels] = useState<Channel[]>([]);
+  const [voices, setVoices] = useState<Voice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState<number | null>(null);
+  const [banner, setBanner] = useState<string>('');
 
   const load = async () => {
     setLoading(true);
@@ -14,6 +60,10 @@ export default function Channels() {
 
   useEffect(() => {
     load();
+    api.get<Voice[]>('/channels/voices').then(({data}) => setVoices(data)).catch(() => undefined);
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('connected')) setBanner('Channel connected successfully.');
+    if (params.get('error')) setBanner(`Connection failed: ${params.get('error')}`);
   }, []);
 
   const onboard = async () => {
@@ -38,6 +88,8 @@ export default function Channels() {
         <h2>Channels</h2>
         <button onClick={onboard}>+ Connect / initiate channel</button>
       </div>
+
+      {banner && <div className="card"><span className="badge ok">{banner}</span></div>}
 
       {loading ? (
         <p>Loading…</p>
@@ -71,7 +123,13 @@ export default function Channels() {
               </div>
               <div style={{marginTop: 14}} className="row">
                 <button onClick={() => runNow(c.id)}>Run now</button>
+                <button className="secondary" onClick={() => setExpanded(expanded === c.id ? null : c.id)}>
+                  {expanded === c.id ? 'Close' : 'Settings'}
+                </button>
               </div>
+              {expanded === c.id && (
+                <ChannelSettings channel={c} voices={voices} onSaved={() => { setExpanded(null); load(); }} />
+              )}
             </div>
           ))}
         </div>

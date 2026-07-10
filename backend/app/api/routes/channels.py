@@ -18,6 +18,16 @@ def list_channels(db: Session = Depends(get_db)):
     return db.execute(select(Channel).where(Channel.active)).scalars().all()
 
 
+@router.get("/voices")
+def list_voices():
+    """Available ElevenLabs voices for narration selection."""
+    from app.integrations import elevenlabs_client
+    try:
+        return elevenlabs_client.list_voices()
+    except Exception:
+        return []
+
+
 @router.get("/{channel_id}", response_model=ChannelOut)
 def get_channel(channel_id: int, db: Session = Depends(get_db)):
     channel = db.get(Channel, channel_id)
