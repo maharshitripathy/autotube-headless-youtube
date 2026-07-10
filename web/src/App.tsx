@@ -9,10 +9,12 @@ import Calendar from './pages/Calendar';
 import Approvals from './pages/Approvals';
 import Monetize from './pages/Monetize';
 import Experiments from './pages/Experiments';
+import Library from './pages/Library';
 
 const NAV = [
   {to: '/dashboard', label: 'Dashboard', icon: '📊'},
   {to: '/channels', label: 'Channels', icon: '📺'},
+  {to: '/library', label: 'Library', icon: '🎬'},
   {to: '/insights', label: 'Insights', icon: '📈'},
   {to: '/calendar', label: 'Calendar', icon: '🗓️'},
   {to: '/monetize', label: 'Monetization', icon: '💰'},
@@ -123,6 +125,7 @@ function Shell({onLogout}: {onLogout: () => void}) {
             <Route path="/" element={<Navigate to="/dashboard" />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/channels" element={<Channels />} />
+            <Route path="/library" element={<Library />} />
             <Route path="/insights" element={<Insights />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/monetize" element={<Monetize />} />

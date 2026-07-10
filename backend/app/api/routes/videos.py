@@ -42,3 +42,31 @@ def get_video_media(video_id: int, db: Session = Depends(get_db)):
         "audio_url": storage.presigned_url(video.audio_key) if video.audio_key else None,
         "thumbnail_url": storage.presigned_url(video.thumbnail_key) if video.thumbnail_key else None,
     }
+
+
+@router.get("/{video_id}/detail")
+def get_video_detail(video_id: int, db: Session = Depends(get_db)):
+    """Combined video + media URLs + distributions for the Library drawer."""
+    from app.services import storage
+    from app.models.distribution import Distribution
+
+    video = db.get(Video, video_id)
+    if not video:
+        raise HTTPException(404, "Video not found")
+
+    dists = db.execute(
+        select(Distribution).where(Distribution.video_id == video_id)
+    ).scalars().all()
+
+    return {
+        "video": VideoOut.model_validate(video).model_dump(),
+        "media": {
+            "video_url": storage.presigned_url(video.video_key) if video.video_key else None,
+            "thumbnail_url": storage.presigned_url(video.thumbnail_key) if video.thumbnail_key else None,
+        },
+        "distributions": [
+            {"platform": d.platform, "status": d.status, "caption": d.caption,
+             "download_url": d.download_url, "external_id": d.external_id}
+            for d in dists
+        ],
+    }

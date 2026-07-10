@@ -53,6 +53,21 @@ export interface Job {
   trigger: string;
 }
 
+export interface VideoOut {
+  id: number;
+  channel_id: number;
+  status: string;
+  topic?: string | null;
+  title?: string | null;
+  description?: string | null;
+  tags?: string[] | null;
+  youtube_video_id?: string | null;
+  scheduled_at?: string | null;
+  published_at?: string | null;
+  qa_passed?: boolean | null;
+  qa_notes?: string[] | null;
+}
+
 export interface CalendarEntry {
   id: number;
   channel_id: number;
