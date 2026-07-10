@@ -1,0 +1,26 @@
+{
+  "name": "autotube-render",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Remotion render service for AutoTube Shorts",
+  "scripts": {
+    "serve": "tsx src/server.ts",
+    "preview": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts Short out/video.mp4"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.240",
+    "@remotion/renderer": "4.0.240",
+    "express": "4.21.2",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.240",
+    "zod": "3.24.1"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.0",
+    "@types/react": "18.3.18",
+    "tsx": "4.19.2",
+    "typescript": "5.7.2"
+  }
+}
