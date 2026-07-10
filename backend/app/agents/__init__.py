@@ -6,6 +6,7 @@ from app.agents.visuals import VisualsAgent
 from app.agents.captions import CaptionsAgent
 from app.agents.render import RenderAgent
 from app.agents.seo import SeoAgent
+from app.agents.monetize import MonetizeAgent
 from app.agents.publish import PublishAgent
 from app.agents.analytics import AnalyticsAgent
 from app.agents.strategy import StrategyAgent
@@ -19,6 +20,7 @@ PRODUCTION_PIPELINE = [
     CaptionsAgent(),
     RenderAgent(),
     SeoAgent(),
+    MonetizeAgent(),
 ]
 
 PUBLISH_AGENT = PublishAgent()

@@ -24,6 +24,20 @@ class ScriptAgent(BaseAgent):
         ctx.video.script = result["script"]
         ctx.data["beats"] = result.get("beats", [])
         ctx.data["hook"] = result.get("hook")
+
+        # Insert a sponsor ad-read into the narration if configured.
+        from app.models.monetization import Monetization
+        mon = (
+            ctx.db.query(Monetization)
+            .filter(Monetization.channel_id == ctx.channel.id)
+            .one_or_none()
+        )
+        if mon and mon.sponsor_active and mon.sponsor_script:
+            if mon.sponsor_placement == "intro":
+                ctx.video.script = f"{mon.sponsor_script}\n\n{ctx.video.script}"
+            else:
+                ctx.video.script = f"{ctx.video.script}\n\n{mon.sponsor_script}"
+
         ctx.db.commit()
 
         cost_guard.record_spend(

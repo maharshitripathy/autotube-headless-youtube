@@ -92,3 +92,27 @@ class AnalyticsSummary(BaseModel):
     subscribers_gained: int
     avg_ctr: float
     videos_published: int
+
+
+class MonetizationOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    channel_id: int
+    affiliate_links: list | None = None
+    sponsor_active: bool
+    sponsor_name: str | None = None
+    sponsor_script: str | None = None
+    sponsor_placement: str
+    cta_text: str | None = None
+    lead_url: str | None = None
+    pinned_comment: str | None = None
+
+
+class MonetizationUpdate(BaseModel):
+    affiliate_links: list | None = None
+    sponsor_active: bool | None = None
+    sponsor_name: str | None = None
+    sponsor_script: str | None = None
+    sponsor_placement: str | None = None
+    cta_text: str | None = None
+    lead_url: str | None = None
+    pinned_comment: str | None = None

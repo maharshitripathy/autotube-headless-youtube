@@ -41,6 +41,13 @@ class PublishAgent(BaseAgent):
         if not publish_at:
             ctx.video.published_at = datetime.now(timezone.utc)
 
+        # Post the pinned CTA comment (best-effort; needs force-ssl scope).
+        if ctx.video.pinned_comment and not publish_at:
+            try:
+                youtube.post_top_comment(ctx.channel, video_id, ctx.video.pinned_comment)
+            except Exception as exc:
+                ctx.log(f"pinned comment failed: {exc}")
+
         # Mark the calendar entry done if this run came from one.
         if entry_id := ctx.data.get("calendar_entry_id"):
             from app.models.calendar import CalendarEntry

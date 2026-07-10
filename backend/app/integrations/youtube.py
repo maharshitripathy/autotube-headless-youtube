@@ -19,6 +19,7 @@ from app.security import decrypt, encrypt
 SCOPES = [
     "https://www.googleapis.com/auth/youtube.upload",
     "https://www.googleapis.com/auth/youtube.readonly",
+    "https://www.googleapis.com/auth/youtube.force-ssl",
     "https://www.googleapis.com/auth/yt-analytics.readonly",
     "https://www.googleapis.com/auth/yt-analytics-monetary.readonly",
 ]
@@ -171,6 +172,22 @@ def fetch_analytics(channel, days: int = 28) -> list[dict]:
     for row in resp.get("rows", []):
         rows.append(dict(zip(headers, row)))
     return rows
+
+
+def post_top_comment(channel, video_id: str, text: str) -> str | None:
+    """Post a top-level comment (used for a pinned CTA). Best-effort."""
+    creds = credentials_for_channel(channel)
+    yt = build("youtube", "v3", credentials=creds)
+    resp = yt.commentThreads().insert(
+        part="snippet",
+        body={
+            "snippet": {
+                "videoId": video_id,
+                "topLevelComment": {"snippet": {"textOriginal": text}},
+            }
+        },
+    ).execute()
+    return resp.get("id")
 
 
 def fetch_revenue(channel, days: int = 28) -> list[dict]:

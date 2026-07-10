@@ -35,5 +35,6 @@ class Video(Base, TimestampMixin):
 
     # Publishing
     youtube_video_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    pinned_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     scheduled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
